@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>什么才是优秀的程序代码</title>
+  
+  
+  <meta property="og:title" content="什么才是优秀的程序代码">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2017/02/08/%E4%BB%80%E4%B9%88%E6%89%8D%E6%98%AF%E4%BC%98%E7%A7%80%E7%9A%84%E7%A8%8B%E5%BA%8F%E4%BB%A3%E7%A0%81/index.html">
+  
+  
+  <meta property="og:img" content="/content/images/blog/me.jpg">
+  
+  
+  <meta property="og:img" content="Thinking as a Geek">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2017-02-08">
+  <meta property="og:article:modified_time" content="2021-02-24">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="CodeStyle">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      什么才是优秀的程序代码
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2017-02-08T17:35:13.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2017-02-08</span>
+    </time>
+    
+    <span class="dot"></span>
+    
+    <a href="/categories/CodeStyle/" class="post-meta-link">CodeStyle</a>
+    
+    
+    
+    <span class="dot"></span>
+    <span>1k 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/CodeStyle/" class="post-meta-link">CodeStyle</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <p>首先，我想说的是，我谈及的“优秀程序代码”，不是指“优秀程序”，也不是更易阅读的“代码”，恰恰相反，我可能想写的是更不易阅读的代码，这里的“优秀”指的是高效、快速。</p>
+<p>在写之前，我想先用一个原则引入这个文章：</p>
+<blockquote>
+<p><strong>KISS原则</strong>  <strong>*K</strong>eep <strong>I</strong>t <strong>S</strong>imple, <strong>S</strong>tupid* </p>
+</blockquote>
+<p>是的，这是我心中优秀的代码程序，就是简单、高效。</p>
+<p>相信所有人都知道时间复杂度这个东西，是的，优秀的代码永远都在做一件事：降低时间复杂度，哪怕写的过程是复杂的、理解起来是相对难的(比如，快速排序、堆排序)。那么，我接下来，想较一下真。</p>
+<h1 id="卡常数"><a href="#卡常数" class="headerlink" title="卡常数"></a>卡常数</h1><blockquote>
+<p>据考证，[卡]（Qa’a）是古埃及第一王朝的最后一位法老。</p>
+<p>他发现并研究了一种常数，后世以他的名字叫做卡常数。卡特兰数的起源也是因为卡的后人与特兰克斯结婚，生下来的孩子就叫卡特兰，而他只是发表了祖传的家书而已。</p>
+<p>Sereja也是卡的后人，提出括号序列问题，也是从家书里得到的资料。然而Sereja为了不让这个秘密公开，于是隐瞒了这道题的真正做法。可是由于卡的后人不是各个都像卡特兰一样爱慕虚荣，这一算法也无法找到。“欲见贤人而不以其道，犹欲其入而闭之门也”。卡之常数的奥秘，需要以一颗诚心去追寻。</p>
+</blockquote>
+<p>看不懂对吗？</p>
+<p>我也看不懂，因为这是一群高中生写的。按照我的理解，卡常数，就是内循环里的那些看似不重要的语句其实每一句话的运行速度是不一样的，这个客观规律，是真实存在的，举个栗子🌰</p>
+<p>程序1</p>
+<pre class="highlight"><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= K; i++)</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt;= K; j++)</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">0</span>; k &lt;= K; k++) &#123; </span><br><span class="line">      r.a[i][j] += a[i][k] * x.a[k][j];</span><br><span class="line">      <span class="keyword">if</span> (r.a[i][j] &gt;= <span class="number">1ll</span> &lt;&lt; <span class="number">62</span> || k == K) r.a[i][j] %= mod;</span><br><span class="line">   &#125;</span><br></pre>
+
+<p>程序2</p>
+<pre class="highlight"><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt;= K; i++)</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt;= K; j++)</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> k = <span class="number">0</span>; k &lt;= K; k++)</span><br><span class="line">      r.a[i][j] = (r. a[i][j] + a[i][k] * x.a[k][j] % mod) % mod; </span><br></pre>
+
+<p>按照常人的理解，<code>程序1</code>和<code>程序2</code>的复杂度都是O(n^3)，没错，那么他们的时间是一样的吗？</p>
+<p>并不一样。</p>
+<p>在机器性能并没有那么高的情况下，在测试数据量没有那么少的情况下，第二种比第一种快了一倍。</p>
+<p><strong>为什么？</strong></p>
+<p>因为第二种代码更加精炼吗？并不完全是。</p>
+<p>在<code>程序1</code>中，<code> if (r.a[i][j] &gt;= 1ll &lt;&lt; 62 || k == K)</code>实际上是耗费时间的，if操作在执行的时候真实的操作是这样的：</p>
+<pre class="highlight"><span class="line"><span class="keyword">if</span>(这里面是<span class="literal">true</span>吗？)</span><br><span class="line">  左边是<span class="literal">true</span>吗？</span><br><span class="line">  右边是<span class="literal">true</span>吗？</span><br><span class="line">  ||操作是<span class="literal">true</span>吗？</span><br></pre>
+
+<p>这必然会消耗大量的时间，同理</p>
+<pre class="highlight"><span class="line">r.a[i][j] += a[i][k] * x.a[k][j];</span><br><span class="line">r.a[i][j] = a[i][k] * x.a[k][j] + r.a[i][j];</span><br></pre>
+
+<p>一样吗？实际上是不一样的，后者比前者快一点。</p>
+<p>你可能觉得，这也太较真了吧？但是高效就是高效，效率提高才是硬道理。</p>
+<blockquote>
+<p>不积跬步，无以至千里；不积小流，无以成江海。</p>
+</blockquote>
+<h1 id="原则"><a href="#原则" class="headerlink" title="原则"></a>原则</h1><ul>
+<li><p>一杆内存在心中</p>
+</li>
+<li><p>多写一个不必要的循环递归，浑身难受</p>
+</li>
+<li><p>多写一个不必要的逻辑判断，浑身难受</p>
+</li>
+<li><p>多写一个无关变量，浑身难受</p>
+</li>
+<li><p>不找到最优解，浑身难受</p>
+</li>
+<li><p>始终自发的想着如何用栈、树去解决问题</p>
+</li>
+<li><p>代码效率哪怕提升的是一倍，花一天优化代码也是值得的</p>
+</li>
+<li><p>时刻遵循RP定律写代码，RP++</p>
+</li>
+</ul>
+<p>我从我接触OI那一刻起，我觉得算法是美的，每一个人写出来的算法都体现了一种算法，永远对高效快速的低复杂度的精炼代码充满敬畏之心！❤️</p>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  <div class="nav-item-prev">
+    <a href="/2017/02/11/函数式编程柯里化/" class="nav-link">
+      <i class="iconfont icon-left nav-prev-icon"></i>
+      <div>
+        <div class="nav-label">上一篇</div>
+        
+        <div class="nav-title">浅谈函数式编程柯里化 </div>
+        
+      </div>
+    </a>
+  </div>
+  
+  
+  <div class="nav-item-next">
+    <a href="/2017/02/04/我眼中的React/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">我眼中的React </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8D%A1%E5%B8%B8%E6%95%B0"><span class="toc-text">卡常数</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8E%9F%E5%88%99"><span class="toc-text">原则</span></a></li></ol>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>69</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>25</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>25</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8D%A1%E5%B8%B8%E6%95%B0"><span class="toc-text">卡常数</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8E%9F%E5%88%99"><span class="toc-text">原则</span></a></li></ol>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Sql/" title="Sql"><div class="tags-list-item">Sql</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/PaaS/" title="PaaS"><div class="tags-list-item">PaaS</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8D%A1%E5%B8%B8%E6%95%B0"><span class="toc-text">卡常数</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8E%9F%E5%88%99"><span class="toc-text">原则</span></a></li></ol>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2020-09-28</div>
+        <a href="/2020/09/28/在树莓派上编译运行GTA3/"><div class="recent-posts-item-content">在树莓派上编译运行GTA3</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2020-09-10</div>
+        <a href="/2020/09/10/程序员生存指南之如何加固你的项目/"><div class="recent-posts-item-content">程序员生存指南之如何加固你的项目</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2019-05-18</div>
+        <a href="/2019/05/18/NUC5i5RYH-Mojave-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Mojave 黑苹果安装教程</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2021
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>
