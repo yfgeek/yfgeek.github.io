@@ -1,0 +1,116 @@
+# Hexo Configuration
+## Docs: https://hexo.io/docs/configuration.html
+## Source: https://github.com/hexojs/hexo/
+
+# Site
+title: Ivan's Blog
+subtitle: 喜欢一切有趣的事物
+description: Thinking as a Geek
+author: Ivan
+language: zh-CN
+timezone:
+
+SEOTitle: Ivan's Blog
+header-img: content/images/2016/08/wall.jpg
+email: yifanb@gmail.com
+keyword: "喜欢一切有趣的事物"
+
+# URL
+## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
+url: http://www.yfgeek.com
+root: /
+permalink: :year/:month/:day/:title/
+permalink_defaults:
+
+# Directory
+source_dir: source
+public_dir: public
+tag_dir: tags
+archive_dir: archives
+category_dir: categories
+code_dir: downloads/code
+i18n_dir: :lang
+skip_render:
+
+# Writing
+new_post_name: :title.md # File name of new posts
+default_layout: post
+titlecase: false # Transform title into titlecase
+external_link: 
+  enable: true # Open external links in new tab
+  field: site # Apply to the whole site
+  exclude: ''
+filename_case: 0
+render_drafts: false
+post_asset_folder: false
+relative_link: false
+future: true
+highlight:
+  enable: true
+  line_number: true
+  auto_detect: false
+  tab_replace:
+
+# Category & Tag
+default_category: uncategorized
+category_map:
+tag_map:
+
+# add post views
+leancloud_visitors:
+  enable: true
+  app_id: oLTXcyRzIdgKgCNIteRM0cUy-gzGzoHsz
+  app_key: BUnbApGSylYt7lWhAHBbFsdF
+
+# Date / Time format
+## Hexo uses Moment.js to parse and display date
+## You can customize the date format as defined in
+## http://momentjs.com/docs/#/displaying/format/
+date_format: YYYY-MM-DD
+time_format: HH:mm:ss
+
+# Pagination
+## Set per_page to 0 to disable pagination
+per_page: 5
+pagination_dir: page
+
+# Extensions
+## Plugins: https://hexo.io/plugins/
+## Themes: https://hexo.io/themes/
+theme: kaze
+
+search:
+  path: search.xml
+  field: post
+  format: html
+  limit: 10000
+
+sitemap:
+  path: sitemap.xml
+baidusitemap:
+  path: baidusitemap.xml
+
+disqus_username: yfgeek
+
+sidebar: true                           # whether or not using Sidebar.
+sidebar-about-description: "对任何技术永远充满敬畏之心"
+sidebar-avatar: img/logo.jpg
+
+featured-tags: true                     # whether or not using Feature-Tags
+featured-condition-size: 1
+
+anchorjs: true
+
+RSS: true
+weibo_username:     yfss
+zhihu_username:     yfgeek
+github_username:    yfgeek
+
+# Deployment
+## Docs: https://hexo.io/docs/deployment.html
+deploy:
+  type: git
+  repository: git@github.com:yfgeek/yfgeek.github.io.git
+  branch: master
+  include:
+  - .nojekyll
