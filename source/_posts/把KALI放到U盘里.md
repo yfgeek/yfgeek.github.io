@@ -1,7 +1,6 @@
 ---
 title: 把KALI放到U盘里
 tags: 'Linux'
-permalink: ba-kalifang-dao-upan-li
 id: 16
 updated: '2016-08-25 19:29:38'
 date: 2016-08-25 19:26:45

@@ -4,7 +4,6 @@ date: 2017-11-15 18:16:54
 tags: 数据
 categories: Python
 header-img: "/content/images/uob/wall.jpg"
-permalink: uob3
 ---
 
 最近在做一个小APP，一直没有来的及更新这个系列的文章，是为抱歉。按照上文讲到，我们已经将数据重复的内容用pandas库去掉了，接下来将干一件难度很大的事情，那就是对人名进行提取。
