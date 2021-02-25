@@ -625,7 +625,7 @@ pre[class*='highlight'] {
 .card-author {
   background-color: var(--widget-background-color);
   transition: background-color 0.3s;
-  padding: 1.5rem;
+  padding: 0.8rem;
 }
 .post-title,
 .card-excerpt {
@@ -658,6 +658,11 @@ pre[class*='highlight'] {
 @media (max-width: 862px) {
   .card +.card {
     margin-top: 0.8rem;
+  }
+  .card {
+    border-radius: 0;
+    box-shadow: none;
+    background-color: var(--body-background-color);
   }
 }
 .categories-card {
@@ -1322,7 +1327,7 @@ mjx-container svg:focus {
 }
 @media (max-width: 862px) {
   .section-wrap {
-    padding: 0.8rem 0.4rem;
+    padding: 0;
   }
 }
 .categories-card {
