@@ -1,7 +1,6 @@
 ---
 title: 常用Bash命令总结
 tags: 'Linux'
-permalink: bash
 id: 10
 updated: '2016-08-06 11:15:29'
 date: 2016-08-06 00:36:19
