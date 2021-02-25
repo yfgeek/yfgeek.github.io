@@ -8,28 +8,29 @@
   <meta name="theme-color" content="#fff" id="theme-color">
   <meta name="description" content="Thinking as a Geek">
   <link rel="icon" href="/content/images/blog/logo.jpg">
-  <title>“我是如何收集校友的”之数据去重</title>
+  <title>把KALI放到U盘里</title>
   
   
-  <meta property="og:title" content="“我是如何收集校友的”之数据去重">
+  <meta property="og:title" content="把KALI放到U盘里">
   
   
-  <meta property="og:url" content="http://www.yfgeek.com/uob2">
+  <meta property="og:url" content="http://www.yfgeek.com/2016/08/25/%E6%8A%8AKALI%E6%94%BE%E5%88%B0U%E7%9B%98%E9%87%8C/index.html">
   
   
   <meta property="og:img" content="/content/images/blog/me.jpg">
   
   
-  <meta property="og:img" content="Thinking as a Geek">
+  <meta property="og:img" content="&lt;p&gt;步骤1：进入 bios设置U盘启动，保存并启动电脑&lt;/p&gt;
+&lt;p&gt;步骤2：在启动选择画面中，选第一个“kali linux(686-pae)”。&lt;/p&gt;">
   
   
   <meta property="og:type" content="article">
-  <meta property="og:article:published_time" content="2017-10-27">
-  <meta property="og:article:modified_time" content="2021-02-24">
+  <meta property="og:article:published_time" content="2016-08-25">
+  <meta property="og:article:modified_time" content="2016-08-25">
   <meta property="og:article:author" content="极客凡">
   
   
-  <meta property="og:article:tag" content="数据">
+  <meta property="og:article:tag" content="Linux">
   
   
   
@@ -196,23 +197,18 @@
 <article class="card card-content">
   <header>
     <h1 class="post-title">
-      “我是如何收集校友的”之数据去重
+      把KALI放到U盘里
     </h1>
   </header>
   <div class="post-meta post-show-meta">
-    <time datetime="2017-10-27T23:35:52.000Z">
+    <time datetime="2016-08-25T19:26:45.000Z">
       <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
-      <span>2017-10-27</span>
+      <span>2016-08-25</span>
     </time>
     
-    <span class="dot"></span>
-    
-    <a href="/categories/Python/" class="post-meta-link">Python</a>
-    
-    
     
     <span class="dot"></span>
-    <span>703 字</span>
+    <span>166 字</span>
     
   </div>
   
@@ -221,40 +217,19 @@
       <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
       
       
-        <a href="/tags/数据/" class="post-meta-link">数据</a>
+        <a href="/tags/Linux/" class="post-meta-link">Linux</a>
       
     </div>
   </div>
   
   </header>
   <div id="section" class="post-content">
-    <p>按照上文讲到，我们已经抓取到了所有与“伯明翰大学”相关的数据，我们接下来要做的就是做数据清洗工作。</p>
-<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/uob/2.png" class="lozad post-image"src="/content/images/uob/2.png"></p>
-<p>我们当前进度：2</p>
-<ol>
-<li>爬虫程序——抓取全百度百科与“伯明翰大学”相关的数据</li>
-<li>数据去重——用pandas去掉抓取相同的URL或相同的名称</li>
-<li>提取人名——利用HMM-Viterbi进行人名筛选与提取</li>
-<li>下载器——下载所有数据库中数据清洗过的URL，并存入数据库</li>
-<li>人物Ranking——按照一定的排名方式，对人物进行知名度排名</li>
-<li>人物梗概——利用NLP相关库，对提取的人物进行自动化梗概</li>
-</ol>
-<p>为什么要进行去重？还不是因为爬虫爬下来的结果有大量的重复的信息，在后期的人名筛选甚至下载来说，我们提前先搞定这个重复的问题，节省工作量。有人提出可以在人名过滤后再去重，我想未尝不是一个好点子，但是HMM-Viterbi算法的复杂度高，这样可能降低后期的效率，提前去重未尝不可。</p>
-<p>如图下所示，有很多重复切无用的信息。</p>
-<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/uob/3.png" class="lozad post-image"src="/content/images/uob/3.png"></p>
-<p>关于去重，很多人第一时间想到了布隆过滤器，但是试问，在仅有不到1000的数据量的数据需要用到吗？本文用pandas自带的去重函数<code>drop_duplictad()</code>去重。如果想了解布隆过滤器，我自己也练手写了一个<a target="_blank" rel="noopener" href="https://gist.github.com/yfgeek/2f07921322d4d65fbe05bef0eb897fb9">简单的范例</a>。</p>
-<p>首先，将SQL数据库中所有数据作为DataFrame输入到pandas，</p>
-<p>然后，对相同名字的内容进行去重，</p>
-<p>然后，对相同URL的内容进行去重，</p>
-<p>随后，重新建立索引，</p>
-<p>最后，将内容输出到新的数据表<code>first_filter</code>上，完成今天的工作。</p>
-<pre class="highlight"><span class="line"><span class="comment"># coding=utf-8</span></span><br><span class="line"><span class="comment"># python version：2.7</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> jpype <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">from</span> sqlalchemy <span class="keyword">import</span> create_engine</span><br><span class="line"><span class="keyword">import</span> pymysql</span><br><span class="line"></span><br><span class="line">reload(sys)</span><br><span class="line">sys.setdefaultencoding(<span class="string">&#x27;utf-8&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Filter</span>(<span class="params"><span class="built_in">object</span></span>):</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self</span>):</span></span><br><span class="line">        self.engine = create_engine(<span class="string">&#x27;mysql+pymysql://root:@localhost:3306/uob?charset=utf8&#x27;</span>)</span><br><span class="line">        </span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">distinct</span>(<span class="params">self</span>):</span></span><br><span class="line">        sql = <span class="string">&quot;SELECT * FROM list;&quot;</span></span><br><span class="line">        allData = pd.read_sql(sql, con=self.engine)  <span class="comment"># 从抓取过来的数据库读入</span></span><br><span class="line">        allData.drop_duplicates(<span class="string">&#x27;name&#x27;</span>, <span class="string">&#x27;first&#x27;</span>, inplace=<span class="literal">True</span>)  <span class="comment"># 去除重复name</span></span><br><span class="line">        allData.drop_duplicates(<span class="string">&#x27;url&#x27;</span>, <span class="string">&#x27;first&#x27;</span>, inplace=<span class="literal">True</span>) <span class="comment"># 去除重复url</span></span><br><span class="line">        allData.reset_index(drop=<span class="literal">True</span>, inplace=<span class="literal">True</span>) <span class="comment"># index重新计数</span></span><br><span class="line">        <span class="built_in">print</span> allData.tail()</span><br><span class="line">        allData.to_sql(<span class="string">&#x27;first_filter&#x27;</span>, self.engine, if_exists=<span class="string">&#x27;replace&#x27;</span>, index=<span class="literal">True</span>, index_label=<span class="string">&#x27;fid&#x27;</span>)  <span class="comment"># 输出到新的数据库表first_filter</span></span><br><span class="line">        <span class="keyword">return</span> allData</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    obj_filter = Filter()</span><br><span class="line">    obj_filter.distinct()</span><br></pre>
-
-<p>跑完后我们到数据库中看看</p>
-<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/uob/4.png" class="lozad post-image"src="/content/images/uob/4.png"></p>
-<p>不错，数据量已经下降到了708个，去重工作完成，其实在这期间遇到了很多坑，很多问题，不一一阐述，均为python环境问题。</p>
-<p>下集预告：“我是如何收集校友的”之利用基于HMM-Viterbi的HanLP进行人名提取</p>
-
+    <p>步骤1：进入 bios设置U盘启动，保存并启动电脑</p>
+<p>步骤2：在启动选择画面中，选第一个“kali linux(686-pae)”。</p>
+<span id="more"></span> 
+<p>步骤3：进入kali桌面后 打开命令行，输入gparted，在弹出的窗口程序的右上角选择对应你U盘容量的磁盘。把第二个分区unmount后，将此区格式化成 ext4文件系统，同时把分区名(Label)改成 persistence ，同时记下分区列表里面第二个分区的分区名 例如我的是 /dev/sdb2。</p>
+<p>关掉gparted ，在命令行里输入以下命令：</p>
+<pre class="highlight"><span class="line">mkdir /mnt/usb</span><br><span class="line">mount /dev/sdb2 /mnt/usb</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;/ union&quot;</span> &gt;&gt; /mnt/usb/persistence.conf</span><br><span class="line">umount /mnt/usb</span><br></pre>
   </div>
   <div>
   
@@ -263,12 +238,12 @@
 <div class="nav">
   
   <div class="nav-item-prev">
-    <a href="/2017/10/29/实战树莓派安装Windows-xp/" class="nav-link">
+    <a href="/2016/08/26/树莓派实时温度湿度监测进阶/" class="nav-link">
       <i class="iconfont icon-left nav-prev-icon"></i>
       <div>
         <div class="nav-label">上一篇</div>
         
-        <div class="nav-title">实战树莓派安装Windows XP </div>
+        <div class="nav-title">树莓派实时温度湿度监测进阶 </div>
         
       </div>
     </a>
@@ -276,11 +251,11 @@
   
   
   <div class="nav-item-next">
-    <a href="/2017/10/26/我是如何收集校友的之爬虫/" class="nav-link">
+    <a href="/2016/08/25/基于树莓派的实时温度湿度监测平台/" class="nav-link">
       <div>
         <div class="nav-label">下一篇</div>
         
-        <div class="nav-title">“我是如何收集校友的”之爬虫模块 </div>
+        <div class="nav-title">基于树莓派的实时温度湿度监测平台 </div>
         
       </div>
       <i class="iconfont icon-right nav-next-icon"></i>
