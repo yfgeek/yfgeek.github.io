@@ -37,7 +37,7 @@ Token合约中的token，指的是代币，通过智能合约实现了一种代�
 在[以太坊浏览器](https://etherscan.io/tokens)中，我们可以浏览发行的ERC20代币Token和其合约代码。
 
 
-![](https://upload-images.jianshu.io/upload_images/4092004-5e3abcd42ecac85d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![](/content/images/sablier/4.png)
 
 ### EIP 20 协议
 
