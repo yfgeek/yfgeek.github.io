@@ -5,8 +5,8 @@
   height: 0
   position: relative
   .image
-    -o-object-fit: cover
-    object-fit: cover
+    -o-object-fit: contain
+    object-fit: contain
     width: 100%
     -webkit-filter: var(--image-filter-style)
     filter: var(--image-filter-style)
@@ -34,6 +34,6 @@
       height: 300px
 @media screen and (max-width: 767px)
   .image-wrapper
-    height: 16.48rem
+    height: 9rem
     .image
-      height: 16.48rem
+      height: 9rem
