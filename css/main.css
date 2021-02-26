@@ -724,8 +724,9 @@ pre[class*='highlight'] {
   position: relative;
 }
 .image-wrapper .image {
-  -o-object-fit: contain;
-  object-fit: contain;
+  -o-object-fit: cover;
+  object-fit: cover;
+  object-position: center;
   width: 100%;
   -webkit-filter: var(--image-filter-style);
   filter: var(--image-filter-style);
@@ -760,10 +761,10 @@ pre[class*='highlight'] {
 }
 @media screen and (max-width: 767px) {
   .image-wrapper {
-    height: 9rem;
+    height: 16.48rem;
   }
   .image-wrapper .image {
-    height: 9rem;
+    height: 16.48rem;
   }
 }
 .columns,
@@ -1175,8 +1176,9 @@ mjx-container svg:focus {
   position: relative;
 }
 .image-wrapper .image {
-  -o-object-fit: contain;
-  object-fit: contain;
+  -o-object-fit: cover;
+  object-fit: cover;
+  object-position: center;
   width: 100%;
   -webkit-filter: var(--image-filter-style);
   filter: var(--image-filter-style);
@@ -1211,10 +1213,10 @@ mjx-container svg:focus {
 }
 @media screen and (max-width: 767px) {
   .image-wrapper {
-    height: 9rem;
+    height: 16.48rem;
   }
   .image-wrapper .image {
-    height: 9rem;
+    height: 16.48rem;
   }
 }
 .recent-posts-header {
