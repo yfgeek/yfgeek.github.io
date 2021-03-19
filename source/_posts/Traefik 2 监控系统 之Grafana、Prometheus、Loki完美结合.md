@@ -3,7 +3,7 @@ title: Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合
 date: 2021-03-19 18:16:30
 tags: traefik
 categories: docker
-banner_img: /banners/traefik.png
+banner_img: /banners/traefik2.png
 ---
 
 # 背景
