@@ -1,5 +1,5 @@
 ---
-title: Traefik 2 群晖食用指南
+title: Traefik 2 群晖硬核指南
 date: 2021-03-10 18:16:30
 tags: traefik
 categories: docker
