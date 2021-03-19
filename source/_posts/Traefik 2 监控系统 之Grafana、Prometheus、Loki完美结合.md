@@ -16,13 +16,13 @@ banner_img: /banners/traefik.png
 
 二话不说，咱们先看效果吧。
 
-![监控大盘](/content/traefik/snap1.png)
+![监控大盘](/content/images/traefik/snap1.png)
 
-![监控大盘](/content/traefik/snap2.png)
+![监控大盘](/content/images/traefik/snap2.png)
 
-![日志检索](/content/traefik/snap3.png)
+![日志检索](/content/images/traefik/snap3.png)
 
-![日志检索](/content/traefik/snap4.png)
+![日志检索](/content/images/traefik/snap4.png)
 
 # Traefik
 
@@ -214,7 +214,7 @@ docker container logs traefik -f
 
 监控系统，你可能跟我说ELK？别试了，我已经试过了，这个对内存要求太高了，群晖咱承受不起，最终采用的方案如下：
 
-![](/content/traefik/loki-art.png)
+![](/content/images/traefik/loki-art.png)
 
 ## Grafana
 
@@ -330,15 +330,15 @@ docker-compose up -d
 
 等待docker都拉取完毕，创建好容器后，我们便可以通过访问设置的host地址，进入granafa登陆界面。
 
-![](/content/traefik/grf1.png)
+![](/content/images/traefik/grf1.png)
 
 输入用户名admin 密码admin （密码后续可改），进入监控页面，点击如图所示的按钮，随后点击Add data source，添加数据源。
 
-![](/content/traefik/grf2.png)
+![](/content/images/traefik/grf2.png)
 
 依次添加prometheus、loki
 
-![](/content/traefik/grf3.png)
+![](/content/images/traefik/grf3.png)
 
 具体配置如下
 
@@ -346,9 +346,9 @@ prometheus地址：http://prometheus:9090
 
 loki地址：http://loki:3100
 
-![](/content/traefik/grf4.png)
+![](/content/images/traefik/grf4.png)
 
-![](/content/traefik/grf5.png)
+![](/content/images/traefik/grf5.png)
 
 设置完成后，点击Save & Test 看到绿色成功，即设置成功。
 
@@ -357,7 +357,7 @@ loki地址：http://loki:3100
 
 数据源添加完毕后，可以到Explore页面中，检查日志是否上送。
 
-![](/content/traefik/grf6.png)
+!grf6.png)
 
 
 ### Traefik 大盘
