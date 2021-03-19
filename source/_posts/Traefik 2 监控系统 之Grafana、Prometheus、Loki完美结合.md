@@ -360,8 +360,6 @@ loki地址：http://loki:3100
 ![](/content/traefik/grf6.png)
 
 
-接下来搞定大盘显示，
-
 ### Traefik 大盘
 
 点击加号按钮，点击Import，通过如下ID导入 12250，随后Import即可。
