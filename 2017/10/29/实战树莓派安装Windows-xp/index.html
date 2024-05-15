@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>实战树莓派安装Windows XP</title>
+  
+  
+  <meta property="og:title" content="实战树莓派安装Windows XP">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2017/10/29/%E5%AE%9E%E6%88%98%E6%A0%91%E8%8E%93%E6%B4%BE%E5%AE%89%E8%A3%85Windows-xp/index.html">
+  
+  
+  <meta property="og:img" content="/content/images/blog/me.jpg">
+  
+  
+  <meta property="og:img" content="Thinking as a Geek">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2017-10-29">
+  <meta property="og:article:modified_time" content="2024-05-15">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="Raspberry">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      实战树莓派安装Windows XP
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2017-10-29T07:36:24.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2017-10-29</span>
+    </time>
+    
+    <span class="dot"></span>
+    
+    <a href="/categories/Raspberry/" class="post-meta-link">Raspberry</a>
+    
+    
+    
+    <span class="dot"></span>
+    <span>909 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/Raspberry/" class="post-meta-link">Raspberry</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <h1 id="序"><a href="#序" class="headerlink" title="序"></a>序</h1><p>记得小时候，家里的电脑一直安装着Windows 98，天天骂windows难用，虽然没有别的最新的操作系统可以用，也看不出来Windows 98的设计风格有多么古朴，只是bug奇多，动不动就崩溃，系统级别的崩溃，蓝屏，甚至直接坏掉再也无法开机。</p>
+<p>直到有一天，偶然的机会，姐姐家里新买来的电脑，过去一看，大不一样，蓝色的界面，巨好看的任务栏、窗体样式，却不知道什么系统，感觉像是windows 却觉得清晰稳定了许多。</p>
+<p>后来，我逐渐的了解到，这个系统的名字叫Windows XP，那是2002年，漂亮的界面，清脆优雅的提示音，可爱的图标，让我永远无法忘怀。</p>
+<p>回家后，求人把家里的电脑装成Windows XP，却被告知电脑内存只有256MB，硬盘只有30GB，cpu只有800MHZ的配置装的话可能会很卡。无奈之下，我也只好选择接受现实。</p>
+<p>有时候，人越没有却得不到的东西，往往是美好的。一见钟情的Windows XP甚至到做梦都会梦到，能梦到Windows meida player、Windows XP之类的把玩，虽然梦里的情节似乎有些不对，但是那种兴奋的感觉，至今无法忘怀。</p>
+<p>朝思暮想，什么时候能够玩一玩这个系统，那个时候互联网并不发达，并非是没有网络，只是网络搜不到你想搜的东西，也不是任何一个东西都能在网络上下载到，你说：用迅雷呗？不不不，那个时候没有迅雷，只有——网络蚂蚁。</p>
+<p>用Windows 98是痛苦的，经常崩溃甚至需要重新安装系统，我有没有想过过渡产品，比如Windows 2000，对的，有的，其中的过程中我装过几次，但是Windows 2000给我的感觉不是很理想。</p>
+<p>2003年，直到有一天，忍无可忍的我，去盗版盘零售店，花了10块钱买了一张Windows XP SP2的安装光盘，我的幸福人生从此开始——</p>
+<p>时至今日，我仍然十分喜欢Windows XP，尽管已经过去14年之久，人很难忘记短暂的美好的东西。</p>
+<h1 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h1><p>下面回归正文，本文写写如何用树莓派 3（Raspberry Pi 3）安装Windows XP。</p>
+<p>其实这是一个伪命题，arm架构怎么能够安装Windows XP呢？充其量应该算是模拟，没错，答题思路就是在系统上安装虚拟机，用arm虚拟机模拟x86架构安装Windows XP。</p>
+<p>其实方法很简单，进入终端，首先：</p>
+<pre class="highlight"><span class="line">sudo apt-get update</span><br></pre>
+
+<p>确认无误后，我们开始安装qemu和kvm：</p>
+<pre class="highlight"><span class="line">sudo apt-get install qemu-kvm qemu virt-manager virt-viewer libvirt-bin</span><br></pre>
+
+<p>网速快的话，应该很快就装完了，这时候一定要重启电脑，否则会提示 <code>libvirt</code>未启动：</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/rasp-xp/1.jpg" class="lozad post-image"src="/content/images/rasp-xp/1.jpg"></p>
+<p>重启后，<a target="_blank" rel="noopener" href="http://www.mediafire.com/?ynv5hvh7pmt">下载精简版XP MicroXP</a> 密码：warez-bb，当然你愿意安装完整版，也不是不可以。只要下载好并且把iso文件复制到系统里即可。</p>
+<p>接下来的事情很简单，创建虚拟机：</p>
+<p>应用程序-系统工具-虚拟系统管理器</p>
+<p>随后：文件-新建虚拟机</p>
+<p>弹出来的对话框里，配置系统架构为x86_64，内存为256mb，所占空间按照自己比例分配，建议1.5GB-2GB。</p>
+<p>然后开始启动就可以安装了，安装过程大概需要3-4个小时。</p>
+<h1 id="图鉴"><a href="#图鉴" class="headerlink" title="图鉴"></a>图鉴</h1><p>以下是一些图鉴，敬请欣赏。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/rasp-xp/2.jpg" class="lozad post-image"src="/content/images/rasp-xp/2.jpg"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/rasp-xp/3.jpg" class="lozad post-image"src="/content/images/rasp-xp/3.jpg"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/rasp-xp/4.jpg" class="lozad post-image"src="/content/images/rasp-xp/4.jpg"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/rasp-xp/5.jpg" class="lozad post-image"src="/content/images/rasp-xp/5.jpg"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/rasp-xp/6.jpg" class="lozad post-image"src="/content/images/rasp-xp/6.jpg"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/rasp-xp/7.jpg" class="lozad post-image"src="/content/images/rasp-xp/7.jpg"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/rasp-xp/8.png" class="lozad post-image"src="/content/images/rasp-xp/8.png"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/rasp-xp/9.png" class="lozad post-image"src="/content/images/rasp-xp/9.png"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/rasp-xp/10.png" class="lozad post-image"src="/content/images/rasp-xp/10.png"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/rasp-xp/11.png" class="lozad post-image"src="/content/images/rasp-xp/11.png"></p>
+<p>本文谨纪念美好的童年时代。</p>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  <div class="nav-item-prev">
+    <a href="/2017/11/15/“我是如何收集校友的”之利用基于HMM-Viterbi的HanLP进行人名提取/" class="nav-link">
+      <i class="iconfont icon-left nav-prev-icon"></i>
+      <div>
+        <div class="nav-label">上一篇</div>
+        
+        <div class="nav-title">“我是如何收集校友的”之利用基于HMM-Viterbi的HanLP进行人名提取 </div>
+        
+      </div>
+    </a>
+  </div>
+  
+  
+  <div class="nav-item-next">
+    <a href="/2017/10/27/“我是如何收集校友的”之数据去重/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">“我是如何收集校友的”之数据去重 </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%BA%8F"><span class="toc-text">序</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AE%89%E8%A3%85"><span class="toc-text">安装</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%BE%E9%89%B4"><span class="toc-text">图鉴</span></a></li></ol>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>72</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>26</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>26</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%BA%8F"><span class="toc-text">序</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AE%89%E8%A3%85"><span class="toc-text">安装</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%BE%E9%89%B4"><span class="toc-text">图鉴</span></a></li></ol>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/traefik/" title="traefik"><div class="tags-list-item">traefik</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+    <a href="/tags/RaspberryPi/" title="RaspberryPi"><div class="tags-list-item">RaspberryPi</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%BA%8F"><span class="toc-text">序</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AE%89%E8%A3%85"><span class="toc-text">安装</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%BE%E9%89%B4"><span class="toc-text">图鉴</span></a></li></ol>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-19</div>
+        <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/"><div class="recent-posts-item-content">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-10</div>
+        <a href="/2021/03/10/Traefik 2 群晖硬核指南/"><div class="recent-posts-item-content">Traefik 2 群晖硬核指南</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-02-26</div>
+        <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Big Sur 黑苹果安装教程</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2024
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>

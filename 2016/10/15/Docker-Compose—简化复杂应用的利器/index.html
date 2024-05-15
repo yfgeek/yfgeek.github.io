@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>Docker Compose—简化复杂应用的利器 </title>
+  
+  
+  <meta property="og:title" content="Docker Compose—简化复杂应用的利器 ">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2016/10/15/Docker-Compose%E2%80%94%E7%AE%80%E5%8C%96%E5%A4%8D%E6%9D%82%E5%BA%94%E7%94%A8%E7%9A%84%E5%88%A9%E5%99%A8/index.html">
+  
+  
+  <meta property="og:img" content="/content/images/blog/me.jpg">
+  
+  
+  <meta property="og:img" content="&lt;p&gt;Compose是用于定义和运行复杂Docker应用的工具。你可以在一个文件中定义一个多容器的应用，然后使用一条命令来启动你的应用，然后所有相关的操作都会被自动完成。&lt;/p&gt;">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2016-10-15">
+  <meta property="og:article:modified_time" content="2024-05-15">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="Docker">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      Docker Compose—简化复杂应用的利器 
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2016-10-15T11:10:35.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2016-10-15</span>
+    </time>
+    
+    <span class="dot"></span>
+    
+    <a href="/categories/Docker/" class="post-meta-link">Docker</a>
+    
+    
+    
+    <span class="dot"></span>
+    <span>1.3k 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/Docker/" class="post-meta-link">Docker</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <p>Compose是用于定义和运行复杂Docker应用的工具。你可以在一个文件中定义一个多容器的应用，然后使用一条命令来启动你的应用，然后所有相关的操作都会被自动完成。</p>
+<span id="more"></span> 
+<h2 id="1-安装Docker和Compose"><a href="#1-安装Docker和Compose" class="headerlink" title="1. 安装Docker和Compose"></a>1. 安装Docker和Compose</h2><pre class="highlight"><span class="line"><span class="comment"># 当前最新的Docker是1.6.2，Compose为1.2.0</span></span><br><span class="line">curl -s https://get.docker.io/ubuntu/ | sudo sh</span><br><span class="line">sudo apt-get update</span><br><span class="line">sudo apt-get install lxc-docker</span><br><span class="line"><span class="comment"># 参考http://docs.docker.com/compose/install/#install-compose</span></span><br><span class="line">curl -L https://github.com/docker/compose/releases/download/1.2.0/docker-compose-`<span class="built_in">uname</span> -s`-`<span class="built_in">uname</span> -m` &amp;gt; /usr/local/bin/docker-compose</span><br><span class="line"><span class="built_in">chmod</span> +x /usr/local/bin/docker-compose</span><br></pre>
+<pre class="highlight"><span class="line"><span class="comment">### 上面这个方法真的慢出翔，可以通过Python pip安装。</span></span><br><span class="line"></span><br><span class="line">apt-get install python-pip python-dev</span><br><span class="line">pip install -U docker-compose</span><br></pre>
+
+<p>当前最新的Docker是1.6.2，Compose为1.2.0</p>
+<pre class="highlight"><span class="line">sudo apt-get update</span><br><span class="line">sudo apt-get install lxc-docker</span><br></pre>
+<p>参考 <a target="_blank" rel="noopener" href="http://docs.docker.com/compose/install/#install-compose">http://docs.docker.com/compose/install/#install-compose</a></p>
+<pre class="highlight"><span class="line">curl -L https://github.com/docker/compose/releases/download/1.2.0/docker-compose-uname -s-uname -m &gt; /usr/local/bin/docker-compose curl -L https://github.com/docker/compose/releases/download/1.2.0/docker-compose-uname -s-uname -m &gt; /usr/local/bin/docker-compose</span><br><span class="line"></span><br><span class="line"><span class="built_in">chmod</span> +x /usr/local/bin/docker-compose</span><br><span class="line"><span class="comment">### 上面这个方法真的慢出翔，可以通过Python pip安装。</span></span><br><span class="line">apt-get install python-pip python-dev</span><br><span class="line">pip install -U docker-compose</span><br></pre>
+<p>这样compose就安装好了，查看一下compose的版本信息：</p>
+<pre class="highlight"><span class="line"><span class="built_in">chmod</span> +x /usr/local/bin/docker-compose</span><br><span class="line">docker-compose -version</span><br><span class="line">docker-compose 1.2.0</span><br></pre>
+<h2 id="2-使用Compose"><a href="#2-使用Compose" class="headerlink" title="2. 使用Compose"></a>2. 使用Compose</h2><p>使用Compose只需要简单的三个步骤：</p>
+<p>首先，使用Dockerfile来定义你的应用环境：</p>
+<pre class="highlight"><span class="line">FROM python:2.7</span><br><span class="line">ADD ./code</span><br><span class="line">WORKDIR /code</span><br><span class="line">RUN pip install -r requirements.txt</span><br></pre>
+<p>其中，requirements.txt中的内容包括：</p>
+<pre class="highlight"><span class="line">flask</span><br><span class="line">redis</span><br></pre>
+<p>再用Python写一个简单的app.py</p>
+<pre class="highlight"><span class="line"><span class="keyword">from</span> flask importFlaskfrom redis importRedisimport os</span><br><span class="line">app =Flask(__name__)</span><br><span class="line">redis =Redis(host=<span class="string">&#x27;redis&#x27;</span>, port=<span class="number">6379</span>)@app.route(<span class="string">&#x27;/&#x27;</span>)<span class="keyword">def</span> <span class="title function_">hello</span>():</span><br><span class="line">    redis.incr(<span class="string">&#x27;hits&#x27;</span>)<span class="keyword">return</span><span class="string">&#x27;Hello World! I have been seen %s times.&#x27;</span>% redis.get(<span class="string">&#x27;hits&#x27;</span>)<span class="keyword">if</span> __name__ ==<span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    app.run(host=<span class="string">&quot;0.0.0.0&quot;</span>, debug=<span class="literal">True</span>)</span><br></pre>
+<p>第二步，用一个compose.yaml来定义你的应用服务，他们可以把不同的服务生成不同的容器中组成你的应用</p>
+<pre class="highlight"><span class="line">web:</span><br><span class="line">  build:.</span><br><span class="line">  <span class="built_in">command</span>: python app.py</span><br><span class="line">  ports:</span><br><span class="line">         - <span class="string">&quot;5000:5000&quot;</span></span><br><span class="line">  volumes:</span><br><span class="line">         - .:/code</span><br><span class="line">  links:</span><br><span class="line">         - redis</span><br><span class="line">redis:</span><br><span class="line">  image: redis</span><br></pre>
+<p>第三步，执行<code>docker-compose up</code>来启动你的应用，它会根据compose.yaml的设置来pull/run这俩个容器，然后再启动。</p>
+<pre class="highlight"><span class="line">Creating myapp_redis_1...</span><br><span class="line">Creating myapp_web_1...</span><br><span class="line">Building web...</span><br><span class="line">Step 0 : FROM python:2.7</span><br><span class="line">2.7: Pulling from python</span><br><span class="line">...</span><br><span class="line">Status: Downloaded newer image <span class="keyword">for</span> python:2.7</span><br><span class="line"> ---&gt; d833e0b23482</span><br><span class="line">Step 1 : ADD . /code</span><br><span class="line"> ---&gt; 1c04b1b15808</span><br><span class="line">Removing intermediate container 9dab91b4410d</span><br><span class="line">Step 2 : WORKDIR /code</span><br><span class="line"> ---&gt; Running <span class="keyword">in</span> f495a62feac9</span><br><span class="line"> ---&gt; ffea89a7b090</span><br><span class="line">Attaching to myapp_redis_1, myapp_web_1</span><br><span class="line">......</span><br><span class="line">redis_1 | [1] 17 May 10:42:38.147 * The server is now ready to accept connections on port 6379</span><br><span class="line">web_1   |  * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)</span><br><span class="line">web_1   |  * Restarting with <span class="built_in">stat</span></span><br></pre>
+<h2 id="3-Yaml文件参考"><a href="#3-Yaml文件参考" class="headerlink" title="3. Yaml文件参考"></a>3. Yaml文件参考</h2><p>在上面的yaml文件中，我们可以看到compose文件的基本结构。首先是定义一个服务名，下面是yaml服务中的一些选项条目：</p>
+<p>image:镜像的ID</p>
+<p>build:直接从pwd的Dockerfile来build，而非通过image选项来pull</p>
+<p>links：连接到那些容器。每个占一行，格式为SERVICE[:ALIAS],例如 – db[:database]</p>
+<p>external_links：连接到该compose.yaml文件之外的容器中，比如是提供共享或者通用服务的容器服务。格式同links</p>
+<p>command：替换默认的command命令</p>
+<p>ports: 导出端口。格式可以是：</p>
+<pre class="highlight"><span class="line">ports:-&quot;3000&quot;-&quot;8000:8000&quot;-&quot;127.0.0.1:8001:8001&quot;</span><br></pre>
+<p>expose：导出端口，但不映射到宿主机的端口上。它仅对links的容器开放。格式直接指定端口号即可。</p>
+<p>volumes：加载路径作为卷，可以指定只读模式。</p>
+<pre class="highlight"><span class="line">volumes:-/var/lib/mysql</span><br><span class="line"> - cache/:/tmp/cache</span><br><span class="line"> -~/configs:/etc/configs/:ro</span><br></pre>
+<p> volumes_from：加载其他容器或者服务的所有卷</p>
+<pre class="highlight"><span class="line">environment:- RACK_ENV=development</span><br><span class="line">  - SESSION_SECRET</span><br></pre>
+<p>env_file：从一个文件中导入环境变量，文件的格式为RACK_ENV=development</p>
+<p>extends:扩展另一个服务，可以覆盖其中的一些选项。一个sample如下：</p>
+<pre class="highlight"><span class="line">common.yml</span><br><span class="line">webapp:</span><br><span class="line">  build:./webapp</span><br><span class="line">  environment:- DEBUG=false- SEND_EMAILS=false</span><br><span class="line">development.yml</span><br><span class="line">web:extends:</span><br><span class="line">    file: common.yml</span><br><span class="line">    service: webapp</span><br><span class="line">  ports:-&quot;8000:8000&quot;</span><br><span class="line">  links:- db</span><br><span class="line">  environment:- DEBUG=true</span><br><span class="line">db:</span><br><span class="line">  image: postgres</span><br></pre>
+<p>net：容器的网络模式，可以为”bridge”, “none”, “container:[name or id]”, “host”中的一个。<br>dns：可以设置一个或多个自定义的DNS地址。</p>
+<p>dns_search:可以设置一个或多个DNS的扫描域。</p>
+<p>其他的working_dir, entrypoint, user, hostname, domainname, mem_limit, privileged, restart, stdin_open, tty, cpu_shares，和docker run命令是一样的，这些命令都是单行的命令。例如：</p>
+<pre class="highlight"><span class="line">cpu_shares:73</span><br><span class="line">working_dir:/code</span><br><span class="line">entrypoint: /code/entrypoint.sh</span><br><span class="line">user: postgresql</span><br><span class="line">hostname: foo</span><br><span class="line">domainname: foo.com</span><br><span class="line">mem_limit:1000000000</span><br><span class="line">privileged:true</span><br><span class="line">restart: always</span><br><span class="line">stdin_open:true</span><br><span class="line">tty:true</span><br></pre>
+<h2 id="4-docker-compose常用命令"><a href="#4-docker-compose常用命令" class="headerlink" title="4. docker-compose常用命令"></a>4. docker-compose常用命令</h2><p>在第二节中的docker-compose up，这两个容器都是在前台运行的。我们可以指定-d命令以daemon的方式启动容器。除此之外，docker-compose还支持下面参数：</p>
+<p>–verbose：输出详细信息</p>
+<p>-f 制定一个非docker-compose.yml命名的yaml文件</p>
+<p>-p 设置一个项目名称（默认是directory名）</p>
+<p>docker-compose的动作包括：</p>
+<p>build：构建服务</p>
+<p>kill -s SIGINT：给服务发送特定的信号。</p>
+<p>logs：输出日志</p>
+<p>port：输出绑定的端口</p>
+<p>ps：输出运行的容器</p>
+<p>pull：pull服务的image</p>
+<p>rm：删除停止的容器</p>
+<p>run: 运行某个服务，例如docker-compose run web<br>python manage.py shell</p>
+<p>start：运行某个服务中存在的容器。</p>
+<p>stop:停止某个服务中存在的容器。</p>
+<p>up：create + run + attach容器到服务。</p>
+<p>scale：设置服务运行的容器数量。例如：docker-compose scale web=2 worker=3</p>
+<blockquote>
+<p>转载:<a target="_blank" rel="noopener" href="http://debugo.com/docker-compose">http://debugo.com/docker-compose</a></p>
+</blockquote>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  <div class="nav-item-prev">
+    <a href="/2016/11/08/Github Follow 及 BaiduBlogTransfer 项目/" class="nav-link">
+      <i class="iconfont icon-left nav-prev-icon"></i>
+      <div>
+        <div class="nav-label">上一篇</div>
+        
+        <div class="nav-title">Github Follow 及 BaiduBlogTransfer 项目 </div>
+        
+      </div>
+    </a>
+  </div>
+  
+  
+  <div class="nav-item-next">
+    <a href="/2016/10/12/程序员鄙视链/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">程序员鄙视链 </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%AE%89%E8%A3%85Docker%E5%92%8CCompose"><span class="toc-text">1. 安装Docker和Compose</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E4%BD%BF%E7%94%A8Compose"><span class="toc-text">2. 使用Compose</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Yaml%E6%96%87%E4%BB%B6%E5%8F%82%E8%80%83"><span class="toc-text">3. Yaml文件参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-docker-compose%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4"><span class="toc-text">4. docker-compose常用命令</span></a></li></ol>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>72</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>26</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>26</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%AE%89%E8%A3%85Docker%E5%92%8CCompose"><span class="toc-text">1. 安装Docker和Compose</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E4%BD%BF%E7%94%A8Compose"><span class="toc-text">2. 使用Compose</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Yaml%E6%96%87%E4%BB%B6%E5%8F%82%E8%80%83"><span class="toc-text">3. Yaml文件参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-docker-compose%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4"><span class="toc-text">4. docker-compose常用命令</span></a></li></ol>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/traefik/" title="traefik"><div class="tags-list-item">traefik</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+    <a href="/tags/RaspberryPi/" title="RaspberryPi"><div class="tags-list-item">RaspberryPi</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%AE%89%E8%A3%85Docker%E5%92%8CCompose"><span class="toc-text">1. 安装Docker和Compose</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E4%BD%BF%E7%94%A8Compose"><span class="toc-text">2. 使用Compose</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-Yaml%E6%96%87%E4%BB%B6%E5%8F%82%E8%80%83"><span class="toc-text">3. Yaml文件参考</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-docker-compose%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4"><span class="toc-text">4. docker-compose常用命令</span></a></li></ol>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-19</div>
+        <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/"><div class="recent-posts-item-content">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-10</div>
+        <a href="/2021/03/10/Traefik 2 群晖硬核指南/"><div class="recent-posts-item-content">Traefik 2 群晖硬核指南</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-02-26</div>
+        <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Big Sur 黑苹果安装教程</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2024
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>

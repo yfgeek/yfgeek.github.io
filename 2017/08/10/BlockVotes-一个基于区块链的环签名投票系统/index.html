@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>BlockVotes 一个基于区块链的环签名投票系统</title>
+  
+  
+  <meta property="og:title" content="BlockVotes 一个基于区块链的环签名投票系统">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2017/08/10/BlockVotes-%E4%B8%80%E4%B8%AA%E5%9F%BA%E4%BA%8E%E5%8C%BA%E5%9D%97%E9%93%BE%E7%9A%84%E7%8E%AF%E7%AD%BE%E5%90%8D%E6%8A%95%E7%A5%A8%E7%B3%BB%E7%BB%9F/index.html">
+  
+  
+  <meta property="og:img" content="/content/images/blog/me.jpg">
+  
+  
+  <meta property="og:img" content="Thinking as a Geek">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2017-08-10">
+  <meta property="og:article:modified_time" content="2024-05-15">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="Blockchain">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      BlockVotes 一个基于区块链的环签名投票系统
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2017-08-09T17:10:41.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2017-08-10</span>
+    </time>
+    
+    <span class="dot"></span>
+    
+    <a href="/categories/Blockchain/" class="post-meta-link">Blockchain</a>
+    
+    
+    
+    <span class="dot"></span>
+    <span>3.1k 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/Blockchain/" class="post-meta-link">Blockchain</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <p>好久好久没有写Blog了，最近在忙我的论文，题目是一个基于区块链的环签名投票系统。</p>
+<p>听着名字挺绕的，实际上也是挺绕的，我做这个题目实际上是将三个学术领域的东西放在了一起：</p>
+<ul>
+<li>电子投票 (e-voting) 属于密码学</li>
+<li>区块链(blockchain) 属于密码学的应用</li>
+<li>环签名(ring-signature) 属于密码学</li>
+</ul>
+<p>如果对以上三个概念无任何了解，基本上就告别理解我做的东西了。这个项目目前处于私有项目状态之中，由于存在毕业设计可能会代码查重的问题，在九月初，将会对本项目彻底开源。</p>
+<h1 id="理念"><a href="#理念" class="headerlink" title="理念"></a>理念</h1><img src=/content/images/blockvotes/logo.png width=300 style="margin: 0;">
+
+<h2 id="电子投票？"><a href="#电子投票？" class="headerlink" title="电子投票？"></a>电子投票？</h2><p>实际上，这个学术命题属于电子投票方向的，在电子投票学术方向上属于创新型，在区块链上属于应用型，在谈及这些问题之前，得先说说学术上的电子投票的一些概念：</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/blockvotes/security.png" class="lozad post-image"src="/content/images/blockvotes/security.png"></p>
+<p><strong>隐私性:</strong></p>
+<ul>
+<li>选票保密性 (BP): 任何攻击者都无法把用户所投的票和投票者的身份联系起来。</li>
+<li>无收据性 (RF): 投票者在投票后不能证明他是怎么投票的。系统不允许投票者在投票后证明这些。</li>
+<li>不可强制性 (CR): 任何攻击者都无法强制用户生成自己不想投的票据。 攻击者不会强迫选民得到相应的收据以供强迫者检查。</li>
+</ul>
+<p><strong>可验证性:</strong></p>
+<ul>
+<li>个体可验证性：每个投票者可以验证自己的投票是不是倍正确计入所有投票。</li>
+<li>全局验证性：任何投票者都可以验证其他投票者所投票的合法性。</li>
+</ul>
+<p><strong>不可重投性:</strong></p>
+<p>不可重投性指的是，任何投票者无法对相同的消息进行两次投票。</p>
+<p><strong>公平性:</strong></p>
+<p>公平性指的是，任何人都无法提前知道选票的结果，以及无法影响选票的结果。</p>
+<p>其实还有很多很多概念，具体可以参考引用中的第一个论文。</p>
+<p>实际上，隐私性和可验证性在一定程度上是互相矛盾的，保障可验证性的情况下就可能无法保证隐私，我们在电子投票的方面的目标是尽可能的保障以上的目标。</p>
+<p>所以，设计一个系统是从隐私性和可验证性的角度上出发的，这也就解释了，为什么用区块链，为什么用环签名。</p>
+<h2 id="为什么用区块链"><a href="#为什么用区块链" class="headerlink" title="为什么用区块链"></a>为什么用区块链</h2><p>区块链是什么？区块链可以理解为“分布式公共账本”，按照计算机的角度上，如果你对区块链一窍不通，<strong>你可以理解为一个可 增加、查找 却不能修改、删除的 分布式实时数据库</strong>。而比特币中的交易信息就是存在这个数据库之中的。</p>
+<p>如果你还是不理解，请<strong>千万不要到互联网上搜索什么是比特币、比特币挖矿原理、什么是区块链，只会让你更加疑惑</strong>，他们试图把区块链描述的非常高大上，迷惑你，并且告诉外人，这是很高大上的东西，其实不是，如果你真正研究过区块链的协议，你会觉得其实不是那么回事。在此，对于那些故作玄虚的文章，我想引用《LaTeX新人教程，30分钟从完全陌生到基本入门》文章所说的一句话表达我的心情：</p>
+<blockquote>
+<p>我要严厉警告和强烈声讨那些自以为是advanced LaTeX user的人。请你们不要为了自己那一点可怜可悲的虚荣心，去刻意渲染LaTeX有多么高端多么不容易学习，这和孔乙己炫耀茴香豆的茴字有四种写法有什么区别么？混账！LaTeX到底有多“难”你们自己清楚好么？</p>
+</blockquote>
+<p>所以，我附了一篇论文[3]，不过是英文版的，但是都是纯白话口语讲述到底什么是区块链，比特币的挖矿原理，实际上是非常浅显易懂的。如果有时间，恰当的时候，我也可以翻译成中文。</p>
+<hr>
+<p>世界上第一个区块链是比特币创造的，比特币需要区块链才能够叫做区块链，为什么？</p>
+<p>因为作为“货币“，最根本的存在的意义是什么？</p>
+<p>证明资产？自己是富二代？不不不，不是的。</p>
+<p>根本意义实际上是交易，人类社会，有了交易，才有了货币，货币是一般等价物，这个我们在中学都学过。</p>
+<p>那么作为一种货币，货币是要流通的，如果顾客买了商家的东西，是不是要顾客给商家付款呀？天经地义的。</p>
+<p>这个过程就是交易，那么，如何证明顾客已经把钱付给了商家？</p>
+<p>在现实生活中，太简单了，根本不用证明，顾客直接把钱给商家就行了。</p>
+<p>但是，如果顾客用银行卡或者支付宝呢？</p>
+<p>好！我们的概念来了，这个概念叫 账本。</p>
+<p>什么是账本？实际上就是银行的这笔交易的流水，在你用银行卡划卡支付的过程中，实际上是顾客和商家都信任银行，认为银行记下来的这个账是正确无误的，并且银行也把顾客的钱减少了，把商家的钱增加了。那么这个记账的媒介，该笔账单，可以说是账本的一部分。</p>
+<p>如果你的银行账户消费的内容足够多，那么这就是一个账本，上面记录着你的所有的交易信息，交易信息和你的账户余额的值一一对应，在这种情况下，你相信银行，你相信账本，银行作为第三方支付方式，你也就自然就信任了。</p>
+<p>可是我为什么要提出账本的概念呢？</p>
+<p>区块链就是一个分布式的公共记账账本。凡是下载了比特币(或XX币，我这里用比特币举例)的客户端的人，都会自动下载这个账本，这个账本储存着全球所有人的通过比特币交易信息。这个信息只能增加，不可以删除、修改，否则就无法解决同步的问题。</p>
+<p>那么我们就可以理解区块链，就是一个分布式的不可删改的数据库，现在理解了吧？</p>
+<p>回归正题，为什么要用区块链，因为区块链的广播机制是通过比特币进行交易而储存的，每个交易中都会有一个东西叫做附言(OP_RETURN)，在附言位置可以留自己的转账信息比如：</p>
+<blockquote>
+<p>哈，这笔交易你收好！是小明转给你的</p>
+</blockquote>
+<p>这个信息是随意的，可以写任何东西。</p>
+<p><a target="_blank" rel="noopener" href="https://www.blocktrail.com/tBTC/tx/cb83c02e94d41851d75cfaa31b5318250267cbc043e72740562fdaf8c612b0cf">真实的例子</a> 附言内容是 haha</p>
+<p>那么聪明的人来了，这段信息是不是可以用来储存东西，虽然有容量限制，但是储存的东西就是永久的不会被更改的。</p>
+<p>不错，我创建一个公共的计票的比特币的账户，并且公开地址，每个投票者对这个地址进行转账，并且附上自己的投票信息，比如候选人什么的作为附言，然后进行转账，内容就是相当于“发布到了区块链”上了。</p>
+<blockquote>
+<p>区块链技术基于去中心化的对等网络，用开源软件把密码学原理、时序数据和共识机制相结合，来保障分布式数据库中各节点的连贯和持续，使信息能即时验证、可追溯、但难以篡改和无法屏蔽，从而创造了一套隐私、高效、安全的共享价值体系。</p>
+</blockquote>
+<p>高判立下，这样每个投票者的投票信息就是公开的可以验证的，但是又由于比特币地址本身具有匿名性，谁也不知道发布投票信息的人是谁，这又符合了隐私性。</p>
+<p>你看，是不是完美了？</p>
+<h2 id="为什么用环签名"><a href="#为什么用环签名" class="headerlink" title="为什么用环签名"></a>为什么用环签名</h2><p>不是，并不完美。</p>
+<p>为什么？</p>
+<p>那在这种情况下，岂不是任何人都可以投票了，不经过投票中心认证的人，都可以瞎投，扰乱视听，而且投票者无法验证整体性。</p>
+<p>没错，这个时候伟大的环签名来了。</p>
+<p>在理解环签名之前，你需要对密码学的签名机制有所了解，如果不了解，请<a target="_blank" rel="noopener" href="http://www.ruanyifeng.com/blog/2011/08/what_is_a_digital_signature.html">点击这里</a>。</p>
+<p>环签名，实际上是一种特殊的群签名。你不用理解什么是群签名，只需要听我继续往下讲什么是环签名。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/blockvotes/ring1.png" class="lozad post-image"src="/content/images/blockvotes/ring1.png"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/blockvotes/ring2.png" class="lozad post-image"src="/content/images/blockvotes/ring2.png"></p>
+<p>你看，我附了一个山东大学一个优秀的博士<a target="_blank" rel="noopener" href="https://wenku.baidu.com/view/5e43126f25c52cc58bd6be40.html">论文</a>截图，是不是瞬间就显得高大上？</p>
+<p>其实也没有什么的。</p>
+<p>环签名是对一个特定的内容进行签名。</p>
+<p>在签名之前，所有人围城一个环，每个人生成一个自己的私钥Si，并且告诉其他人自己的公钥(P1,P2,P3…Pn)。</p>
+<p>接下来就是开始签名，每个人用自己的私钥Si和所有人的公钥(P1,P2,P3…Pn)对内容m进行签名，可以得到签名s。</p>
+<p>注意：</p>
+<ul>
+<li>每个人的得到的签名都是不一样的</li>
+<li>签名的长度取决于公钥的个数</li>
+</ul>
+<p>这样，我们把m替换为我们的投票内容，这样就可以在组织投票之前，对能够投票的人进行圈定，只有在这个圈子里的人才能投票。</p>
+<p>环签名具有天然的可验证性，任何人都可以验证自己，只需要根据得到的签名和所有人的公钥就可以得出自己是不是真正的投票了。</p>
+<p>如果把签名信息s也随着信息m一起广播到区块链上，那是不是就能够保障整体验证性与个体验证性？</p>
+<p>好了，我们投票的主要矛盾解决了！现在，真的解决了！</p>
+<p>你可能一句都没看懂我上面在说什么，也可能看懂了一点，没事，摸摸头，是我表达能力太差了，其实都是非常简单的东西。</p>
+<h2 id="具体投票协议"><a href="#具体投票协议" class="headerlink" title="具体投票协议"></a>具体投票协议</h2><p>我不告诉你哈哈哈哈哈哈，会在九月份公开。</p>
+<p>都是一些数学表达，发了也得花大量篇幅去解释，费劲。</p>
+<p>因为内容可能会查重，即使是中文版本现在我也不想发。</p>
+<h1 id="技术栈"><a href="#技术栈" class="headerlink" title="技术栈"></a>技术栈</h1><p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/blockvotes/stack.png" class="lozad post-image"src="/content/images/blockvotes/stack.png"></p>
+<p>后端语言：PHP</p>
+<p>后端数据库：MySQL</p>
+<p>区块链：比特币BTC/比特币测试网络TESTNET</p>
+<p>PHP MVC 框架：Slim</p>
+<p>PHP DAO 框架：Illuminate Database</p>
+<p>PHP 依赖管理： Composer</p>
+<p>PHP 模板引擎：TWIG</p>
+<p>前端包管理：NPM</p>
+<p>前端CSS预处理器：Sass</p>
+<p>前端代码打包工具：Gulp</p>
+<p>前端预编译器：browserify</p>
+<p>版本控制：Git</p>
+<p>说句实话，技术挺复杂的，用到了很多第三方类库、框架、工具，感谢很多第三方类库的帮助，在我写代码的时候，也发现了一个第三方类库的Bug，并随手修复了，也算是对开源社区的回馈吧。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/blockvotes/fixedbug.png" class="lozad post-image"src="/content/images/blockvotes/fixedbug.png"></p>
+<h1 id="关于开源"><a href="#关于开源" class="headerlink" title="关于开源"></a>关于开源</h1><p>项目会开源的，我知道，区块链最近创业很多，我的这个项目也可以用来创业，但是我根本不在乎这些金钱的东西，<strong>我更享受开源所带来的快感</strong>。</p>
+<p>但是如果拿去用来做商业用途，我还是很不爽的，所以我的这个项目禁止用于商业用途，但是非营利用途都是可以的。</p>
+<h1 id="截图"><a href="#截图" class="headerlink" title="截图"></a>截图</h1><p>可能不是最终版，先尝鲜一下</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/blockvotes/1.png" class="lozad post-image"src="/content/images/blockvotes/1.png"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/blockvotes/2.png" class="lozad post-image"src="/content/images/blockvotes/2.png"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/blockvotes/3.png" class="lozad post-image"src="/content/images/blockvotes/3.png"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/blockvotes/4.png" class="lozad post-image"src="/content/images/blockvotes/4.png"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/blockvotes/5.png" class="lozad post-image"src="/content/images/blockvotes/5.png"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/blockvotes/6.png" class="lozad post-image"src="/content/images/blockvotes/6.png"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/blockvotes/7.png" class="lozad post-image"src="/content/images/blockvotes/7.png"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/blockvotes/8.png" class="lozad post-image"src="/content/images/blockvotes/8.png"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/blockvotes/9.png" class="lozad post-image"src="/content/images/blockvotes/9.png"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/blockvotes/10.png" class="lozad post-image"src="/content/images/blockvotes/10.png"></p>
+<h1 id="本文参考文献"><a href="#本文参考文献" class="headerlink" title="本文参考文献"></a>本文参考文献</h1><p>[1] Jonker H, Mauw S, Pang J. Privacy and verifiability in voting systems: Methods, developments and trends[J]. Computer Science Review, 2013, 10:1-30.</p>
+<p>[2] 张江霄, 李舟军, 刘霞,等. 基于群盲签名的多授权电子投票系统[J]. 中国科技论文, 2015(8):980-983.</p>
+<p>[3] Mercer R. Privacy on the Blockchain: Unique Ring Signatures[J]. 2016.</p>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  <div class="nav-item-prev">
+    <a href="/2017/08/18/记一次Mysql无法启动及修复经历/" class="nav-link">
+      <i class="iconfont icon-left nav-prev-icon"></i>
+      <div>
+        <div class="nav-label">上一篇</div>
+        
+        <div class="nav-title">记一次MySQL无法启动及修复经历 </div>
+        
+      </div>
+    </a>
+  </div>
+  
+  
+  <div class="nav-item-next">
+    <a href="/2017/06/26/拍拍哒投资平台/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">拍拍哒投资平台 </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%90%86%E5%BF%B5"><span class="toc-text">理念</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%B5%E5%AD%90%E6%8A%95%E7%A5%A8%EF%BC%9F"><span class="toc-text">电子投票？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E7%94%A8%E5%8C%BA%E5%9D%97%E9%93%BE"><span class="toc-text">为什么用区块链</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E7%94%A8%E7%8E%AF%E7%AD%BE%E5%90%8D"><span class="toc-text">为什么用环签名</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B7%E4%BD%93%E6%8A%95%E7%A5%A8%E5%8D%8F%E8%AE%AE"><span class="toc-text">具体投票协议</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%8A%80%E6%9C%AF%E6%A0%88"><span class="toc-text">技术栈</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%B3%E4%BA%8E%E5%BC%80%E6%BA%90"><span class="toc-text">关于开源</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%88%AA%E5%9B%BE"><span class="toc-text">截图</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9C%AC%E6%96%87%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="toc-text">本文参考文献</span></a></li></ol>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>72</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>26</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>26</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%90%86%E5%BF%B5"><span class="toc-text">理念</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%B5%E5%AD%90%E6%8A%95%E7%A5%A8%EF%BC%9F"><span class="toc-text">电子投票？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E7%94%A8%E5%8C%BA%E5%9D%97%E9%93%BE"><span class="toc-text">为什么用区块链</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E7%94%A8%E7%8E%AF%E7%AD%BE%E5%90%8D"><span class="toc-text">为什么用环签名</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B7%E4%BD%93%E6%8A%95%E7%A5%A8%E5%8D%8F%E8%AE%AE"><span class="toc-text">具体投票协议</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%8A%80%E6%9C%AF%E6%A0%88"><span class="toc-text">技术栈</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%B3%E4%BA%8E%E5%BC%80%E6%BA%90"><span class="toc-text">关于开源</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%88%AA%E5%9B%BE"><span class="toc-text">截图</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9C%AC%E6%96%87%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="toc-text">本文参考文献</span></a></li></ol>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/traefik/" title="traefik"><div class="tags-list-item">traefik</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+    <a href="/tags/RaspberryPi/" title="RaspberryPi"><div class="tags-list-item">RaspberryPi</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%90%86%E5%BF%B5"><span class="toc-text">理念</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%B5%E5%AD%90%E6%8A%95%E7%A5%A8%EF%BC%9F"><span class="toc-text">电子投票？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E7%94%A8%E5%8C%BA%E5%9D%97%E9%93%BE"><span class="toc-text">为什么用区块链</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E7%94%A8%E7%8E%AF%E7%AD%BE%E5%90%8D"><span class="toc-text">为什么用环签名</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B7%E4%BD%93%E6%8A%95%E7%A5%A8%E5%8D%8F%E8%AE%AE"><span class="toc-text">具体投票协议</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%8A%80%E6%9C%AF%E6%A0%88"><span class="toc-text">技术栈</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%B3%E4%BA%8E%E5%BC%80%E6%BA%90"><span class="toc-text">关于开源</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%88%AA%E5%9B%BE"><span class="toc-text">截图</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9C%AC%E6%96%87%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="toc-text">本文参考文献</span></a></li></ol>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-19</div>
+        <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/"><div class="recent-posts-item-content">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-10</div>
+        <a href="/2021/03/10/Traefik 2 群晖硬核指南/"><div class="recent-posts-item-content">Traefik 2 群晖硬核指南</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-02-26</div>
+        <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Big Sur 黑苹果安装教程</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2024
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>

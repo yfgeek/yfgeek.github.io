@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>浅谈函数式编程柯里化</title>
+  
+  
+  <meta property="og:title" content="浅谈函数式编程柯里化">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2017/02/11/%E5%87%BD%E6%95%B0%E5%BC%8F%E7%BC%96%E7%A8%8B%E6%9F%AF%E9%87%8C%E5%8C%96/index.html">
+  
+  
+  <meta property="og:img" content="/content/images/blog/me.jpg">
+  
+  
+  <meta property="og:img" content="Thinking as a Geek">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2017-02-11">
+  <meta property="og:article:modified_time" content="2024-05-15">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="Web">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      浅谈函数式编程柯里化
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2017-02-11T10:27:57.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2017-02-11</span>
+    </time>
+    
+    <span class="dot"></span>
+    
+    <a href="/categories/Web/" class="post-meta-link">Web</a>
+    
+    
+    
+    <span class="dot"></span>
+    <span>1.3k 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/Web/" class="post-meta-link">Web</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <p>百度百科里对柯里化的定义是</p>
+<blockquote>
+<p>在计算机科学中，柯里化（Currying）是把接受多个参数的函数变换成接受一个单一参数(最初函数的第一个参数)的函数，并且返回接受余下的参数且返回结果的新函数的技术。这个技术由 Christopher Strachey 以逻辑学家 Haskell Curry 命名的，尽管它是 Moses Schnfinkel 和 Gottlob Frege 发明的。</p>
+</blockquote>
+<p>简直看不懂哦，Talk is Cheap，我们拿一个简单的haskell程序说明什么叫</p>
+<h2 id="自动柯里化"><a href="#自动柯里化" class="headerlink" title="自动柯里化"></a>自动柯里化</h2><p>两数相加，返回结果：</p>
+<pre class="highlight"><span class="line">fun add x y = x + y</span><br></pre>
+
+<p>这是一个典型的柯里化的版本，当我输入 <code>(add 1) 2</code> 时与<code>add 1 2</code> 的返回结果一模一样，都是3</p>
+<pre class="highlight"><span class="line"><span class="type">Prelude</span>&gt; (add <span class="number">1</span>) <span class="number">2</span></span><br><span class="line"><span class="number">3</span></span><br></pre>
+
+<p>但是，换个角度上讲，我明明设置了两个“变量”，在haskell里却把它们的结果又封装成了一个函数，这就是haskell的强大特性：自动柯里化，haskell全部帮你自动处理了。</p>
+<p>简单来说，柯里化指的是函数里只接收一个余下的参数，再调用原函数，返回出相应的结果。</p>
+<p>而同样的，没有柯里化的普通版本却是这样的：</p>
+<pre class="highlight"><span class="line"><span class="title">fun</span> add(x, y) = x + y</span><br></pre>
+
+<p>这个版本里，只能通过<code>add(1,2)</code>进行相加操作。</p>
+<p>柯里化实际上是将高阶函数进行降阶处理，没理解？接着看~ </p>
+<h2 id="JavaScript的柯里化"><a href="#JavaScript的柯里化" class="headerlink" title="JavaScript的柯里化"></a>JavaScript的柯里化</h2><p>JavaScript存在<strong>闭包</strong>的特性，能够很好的为我们将函数柯里化，但是很可惜JavaScript不支持自动柯里化，这意味着，我们要自己写柯里化的过程，不过还好，这能有效的让我们理解，到底什么是柯里化。</p>
+<p>同样的，还是那个add的简单函数，用JavaScript实现如下：</p>
+<pre class="highlight"><span class="line"><span class="keyword">function</span> <span class="title function_">add</span>(<span class="params">x, y</span>)&#123;</span><br><span class="line">	<span class="keyword">if</span>(y===<span class="literal">undefined</span>)&#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="function">(<span class="params">z</span>) =&gt;</span> x + z;</span><br><span class="line">	&#125;<span class="keyword">else</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> x+y;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre>
+
+<p>测试一下！通过执行<code>add(1)(2)</code>，果然返回了<code>3</code>，是的，这是一个手动构造柯里化函数的过程。对于大多数函数，我们有通用的柯里化方法：</p>
+<pre class="highlight"><span class="line"><span class="keyword">function</span> <span class="title function_">curry</span>(<span class="params">func</span>) &#123;</span><br><span class="line">  <span class="keyword">var</span> fixedArgs = [].<span class="property">slice</span>.<span class="title function_">call</span>(<span class="variable language_">arguments</span>,<span class="number">1</span>);</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">function</span>(<span class="params"></span>) &#123;</span><br><span class="line">    args = fixedArgs.<span class="title function_">concat</span>([].<span class="property">slice</span>.<span class="title function_">call</span>(<span class="variable language_">arguments</span>))</span><br><span class="line">    <span class="keyword">return</span> func.<span class="title function_">apply</span>(<span class="literal">null</span>, args);</span><br><span class="line">  &#125;;</span><br><span class="line">&#125;</span><br></pre>
+
+<p>也就是说，对于<code>add</code>函数来说，我们用一个函数生成了另一个范围更小的函数，一层接一层的解决问题。这符合函数式编程的思想，就是我们更关注<strong>函数</strong>与<strong>函数</strong>之间的关系，而非状态本身，更在乎局部而非整体。</p>
+<p>这个例子体现不出这种思想的精妙之处，那么我们再举一个例子🌰</p>
+<p>如果，我们想让一个已知的数组每个值都做加1操作，传统的方法该怎么做？</p>
+<pre class="highlight"><span class="line"><span class="keyword">let</span> ar = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>];</span><br><span class="line">ar.<span class="title function_">map</span>(<span class="function">(<span class="params">x</span>)=&gt;</span> x+<span class="number">1</span>);</span><br></pre>
+
+<p>对吧？那么我们下面可以用柯里化的思想把这个问题实现：</p>
+<pre class="highlight"><span class="line"><span class="keyword">const</span> <span class="title function_">add</span> = ar =&gt; ar.<span class="title function_">map</span>(<span class="function"><span class="params">x</span> =&gt;</span> x + <span class="number">1</span>);</span><br><span class="line"><span class="title function_">add</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]);</span><br></pre>
+
+<p>首先我们在<code>add</code>里定义了一个函数，并且传入参数为<code>ar</code>，<code>ar</code>进行<code>Array.prototype.map()</code>操作，对每一个数进行遍历，并且返回这个数字+1后的值给<code>ar</code>，这看起来挺玄乎的，但确实可行，我们只关心局部，请试图把<code>add</code>当做数学里中的函数去思考理解，或许会好懂的多。可是这只是方便了我们理解，那么到底有什么好处呢？</p>
+<p>再举一个例子🌰</p>
+<p>如果我们想写一个函数，用来对已知数组的已知量进行相加n的操作，怎么写？传统方法</p>
+<pre class="highlight"><span class="line"><span class="keyword">let</span> ar= [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>];</span><br><span class="line"><span class="keyword">function</span> <span class="title function_">addToArray</span>(<span class="params">ar,n</span>)&#123;</span><br><span class="line">  <span class="keyword">return</span> ar.<span class="title function_">map</span>(<span class="function">(<span class="params">x</span>)=&gt;</span> x+n)</span><br><span class="line">&#125;;</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="title function_">addToArray</span>(ar,<span class="number">1</span>));</span><br></pre>
+
+<p>但是，我们可以这样写：</p>
+<pre class="highlight"><span class="line"><span class="keyword">const</span> <span class="title function_">add</span> = a =&gt; <span class="function"><span class="params">b</span> =&gt;</span> a+b;</span><br><span class="line"><span class="keyword">const</span> <span class="title function_">addToArray</span> = (<span class="params">ar,n</span>) =&gt; ar.<span class="title function_">map</span>(<span class="title function_">add</span>(n));</span><br><span class="line"><span class="title function_">addToArray</span>([<span class="number">2</span>,<span class="number">3</span>],<span class="number">1</span>)</span><br></pre>
+
+<p>结果都一样，其实过程是不一样的，你可能真的憋不住了，到底有什么用呢？</p>
+<h1 id="柯里化的好处"><a href="#柯里化的好处" class="headerlink" title="柯里化的好处"></a>柯里化的好处</h1><p>就像上面的例子一样，你能看出不同吗？对，第一个的实质是新写了一个函数，对数组进行map操作，而第二个则是在直接在<code>map</code>里进行<code>add</code>操作，这很通用，一旦你写了很多类似于<code>add</code>的函数，就会方便起来，可以让我们方便的在<code>map</code>,<code>reduce</code>,<code>filter</code>里调用。</p>
+<ul>
+<li>能够进行延迟计算，就像add(1)(2)一样，1比2先传入，2就会被延迟计算，在特定的场景里，有一定的应用意义。</li>
+<li>当你发现你要调用一个函数，并且调用参数都是一样的情况下，这个参数就可以被柯里化，以便更好的完成任务。</li>
+<li>优雅的写法，允许你写出来的代码更干净、更有表达力。</li>
+</ul>
+<p>虽然柯里化在日常应用不多，但仍然是一个不可不了解的好概念。</p>
+<h1 id="相关阅读"><a href="#相关阅读" class="headerlink" title="相关阅读"></a>相关阅读</h1><p><a target="_blank" rel="noopener" href="https://cnodejs.org/topic/56261a249b48ca9448b776c4"> JavaScript柯里化</a></p>
+<p><a target="_blank" rel="noopener" href="http://codekirei.com/posts/currying-with-arrow-functions/">Currying and ES6 Arrow Functions</a></p>
+<p><a target="_blank" rel="noopener" href="http://www.cnblogs.com/zztt/p/4142891.html">浅析 JavaScript 中的 函数 currying 柯里化</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=iZLP4qOwY8I">Currying - Part 6 of Functional Programming in JavaScript(需梯子)</a></p>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  <div class="nav-item-prev">
+    <a href="/2017/02/17/揭秘utf8-✓背后的小秘密/" class="nav-link">
+      <i class="iconfont icon-left nav-prev-icon"></i>
+      <div>
+        <div class="nav-label">上一篇</div>
+        
+        <div class="nav-title">揭秘utf8=✓背后的小秘密 </div>
+        
+      </div>
+    </a>
+  </div>
+  
+  
+  <div class="nav-item-next">
+    <a href="/2017/02/08/什么才是优秀的程序代码/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">什么才是优秀的程序代码 </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%87%AA%E5%8A%A8%E6%9F%AF%E9%87%8C%E5%8C%96"><span class="toc-text">自动柯里化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JavaScript%E7%9A%84%E6%9F%AF%E9%87%8C%E5%8C%96"><span class="toc-text">JavaScript的柯里化</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9F%AF%E9%87%8C%E5%8C%96%E7%9A%84%E5%A5%BD%E5%A4%84"><span class="toc-text">柯里化的好处</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%9B%B8%E5%85%B3%E9%98%85%E8%AF%BB"><span class="toc-text">相关阅读</span></a>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>72</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>26</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>26</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%87%AA%E5%8A%A8%E6%9F%AF%E9%87%8C%E5%8C%96"><span class="toc-text">自动柯里化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JavaScript%E7%9A%84%E6%9F%AF%E9%87%8C%E5%8C%96"><span class="toc-text">JavaScript的柯里化</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9F%AF%E9%87%8C%E5%8C%96%E7%9A%84%E5%A5%BD%E5%A4%84"><span class="toc-text">柯里化的好处</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%9B%B8%E5%85%B3%E9%98%85%E8%AF%BB"><span class="toc-text">相关阅读</span></a>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/traefik/" title="traefik"><div class="tags-list-item">traefik</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+    <a href="/tags/RaspberryPi/" title="RaspberryPi"><div class="tags-list-item">RaspberryPi</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%87%AA%E5%8A%A8%E6%9F%AF%E9%87%8C%E5%8C%96"><span class="toc-text">自动柯里化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JavaScript%E7%9A%84%E6%9F%AF%E9%87%8C%E5%8C%96"><span class="toc-text">JavaScript的柯里化</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9F%AF%E9%87%8C%E5%8C%96%E7%9A%84%E5%A5%BD%E5%A4%84"><span class="toc-text">柯里化的好处</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%9B%B8%E5%85%B3%E9%98%85%E8%AF%BB"><span class="toc-text">相关阅读</span></a>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-19</div>
+        <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/"><div class="recent-posts-item-content">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-10</div>
+        <a href="/2021/03/10/Traefik 2 群晖硬核指南/"><div class="recent-posts-item-content">Traefik 2 群晖硬核指南</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-02-26</div>
+        <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Big Sur 黑苹果安装教程</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2024
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>

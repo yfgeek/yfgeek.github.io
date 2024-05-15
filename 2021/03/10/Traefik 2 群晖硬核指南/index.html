@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>Traefik 2 群晖硬核指南</title>
+  
+  
+  <meta property="og:title" content="Traefik 2 群晖硬核指南">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2021/03/10/Traefik%202%20%E7%BE%A4%E6%99%96%E7%A1%AC%E6%A0%B8%E6%8C%87%E5%8D%97/index.html">
+  
+  
+  <meta property="og:img" content="/banners/traefik.png">
+  
+  
+  <meta property="og:img" content="Thinking as a Geek">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2021-03-10">
+  <meta property="og:article:modified_time" content="2024-05-15">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="traefik">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<div class="image-wrapper">
+  <img src="/banners/traefik.png" data-src="/banners/traefik.png"
+    srcset="data:image/svg+xml,%3Csvg%20xmlns=&#39;http://www.w3.org/2000/svg&#39;%20viewBox=&#39;0%200%20300%20300&#39;%3E%3C/svg%3E"
+    class="image lozad"
+    alt="thumbnail"
+  >
+</div>
+
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      Traefik 2 群晖硬核指南
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2021-03-10T10:16:30.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2021-03-10</span>
+    </time>
+    
+    <span class="dot"></span>
+    
+    <a href="/categories/docker/" class="post-meta-link">docker</a>
+    
+    
+    
+    <span class="dot"></span>
+    <span>2.2k 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/traefik/" class="post-meta-link">traefik</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <p>家中群晖nas使用docker运行各种各样的应用也有几年了，多半是自用，同时软路由启动着DDNS自动解析域名的服务。前几天，想和朋友共享gitea，创建一个私有的git服务器，决定再次维护一次。</p>
+<blockquote>
+<p><strong>阶段一</strong>：家中的各种docker容器均各自映射了各自的端口，通过路由器端口映射映射至互联网。</p>
+<p>缺点：1. 端口混乱难以记住 2. 缺乏统一日志记录。</p>
+<p><strong>阶段二</strong>：我又创建了一个docker内部网，在总入口启动了一个nginx容器，同时把各应用加入到docker内部网中，将应用的端口统一，通过nginx配置虚拟主机，路由到不同的应用下，后端地址依赖于容器的主机名解析。</p>
+<p>缺点：1. 容器变动起来十分麻烦，无法轻松的增加容器副本的负载均衡；2. nginx重启强制依赖于各服务的运行状态，否则会启动失败；3. 繁琐的配置懒得手动申请SSL。</p>
+<p><strong>阶段三</strong>：因路由器的配置问题，上行速度无法跑满，去掉了硬件路由器的方式，在群晖nas上启动了lede软路由，软路由作为DMZ区域，所有出口流量走软路由，速度极大的提升了，北京地区ms级别极速打开，上行速度跑满，但上述问题，依然繁琐。</p>
+</blockquote>
+<p>我的VPS用过一段时间的caddy，可基于acme自动注册SSL、续签SSL。考虑到容器时代可能会自由启停增加容器副本，nginx增改配置文件的方式，在服务配置、域名配置、SSL配置方面，<strong>显得传统而又繁琐</strong>。</p>
+<p>为了彻底改变这种落后的机制，刚好在研究k8s的时候，我发现了traefik，刚好能满足我的需求。然而网上大部分内容均为k8s相结合的ingress-traefik，虽然k8s确实香，但家用nas基本上和k8s扯不上关系也不需要，网上仅有一篇文章描述群晖如何安装traefik1，决定分享一下我容器化部署taefik2的填坑经验。</p>
+<h1 id="Traefik"><a href="#Traefik" class="headerlink" title="Traefik"></a>Traefik</h1><p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/traefik/traefik-architecture.png" class="lozad post-image"src="/content/images/traefik/traefik-architecture.png"></p>
+<p>Traefik 是一个开源的可以使得服务发布变得轻松有趣的边缘路由器。它负责接收你系统的请求，然后使用合适的组件来对这些请求进行处理。</p>
+<p>使用 Traefik，不需要维护或者同步一个独立的配置文件：因为一切都会自动配置，实时操作的（无需重新启动，不会中断连接）。使用 Traefik，你可以花更多的时间在系统的开发和新功能上面，而不是在配置和维护工作状态上面花费大量时间。</p>
+<p>除了众多的功能之外，Traefik 的与众不同之处还在于它会自动发现适合你服务的配置。当 Traefik 在检查你的服务时，会找到服务的相关信息并找到合适的服务来满足对应的请求。</p>
+<h1 id="Traefik-部署"><a href="#Traefik-部署" class="headerlink" title="Traefik 部署"></a>Traefik 部署</h1><p>前提：</p>
+<blockquote>
+<ol>
+<li>群晖打开了SSH</li>
+<li>安装了docker套件</li>
+<li>默认磁盘目录是volume1</li>
+</ol>
+</blockquote>
+<p>SSH登录至群晖，执行如下命令：</p>
+<pre class="highlight"><span class="line"><span class="built_in">cd</span> /volume1/docker/</span><br><span class="line"><span class="built_in">mkdir</span> traefik</span><br><span class="line"><span class="built_in">cd</span> traefik</span><br><span class="line"><span class="built_in">mkdir</span> config</span><br><span class="line"><span class="built_in">mkdir</span> ssl</span><br><span class="line"><span class="comment"># 创建traefik专属网络</span></span><br><span class="line">docker network create traefik</span><br><span class="line"><span class="built_in">touch</span> docker-compose.yml</span><br></pre>
+<p>亮出我们的利器，通过docker-compose启动，编辑刚刚创建的yml文件 <code>docker-compose.yml</code>：</p>
+<pre class="highlight"><span class="line"><span class="attr">version:</span> <span class="string">&#x27;3.7&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">traefik:</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">traefik</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">traefik:v2.1.3</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">always</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">CF_API_EMAIL=CLOUDFLARE登录邮箱</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">CLOUDFLARE_DNS_API_TOKEN=CLOUDFLARE创建的DNS</span> <span class="string">TOKEN</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">CLOUDFLARE_ZONE_API_TOKEN=CLOUDFLARE创建的API</span> <span class="string">TOKEN</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;52080:80&quot;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;52443:443&quot;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;52022:22&quot;</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik</span></span><br><span class="line">    <span class="attr">command:</span> <span class="string">traefik</span> <span class="string">--configFile</span> <span class="string">/etc/traefik.toml</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/var/run/docker.sock:/var/run/docker.sock:ro</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./ssl/:/data/ssl/:rw</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./traefik.toml:/etc/traefik.toml:ro</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/:/etc/traefik/config/:ro</span></span><br><span class="line">    <span class="attr">healthcheck:</span></span><br><span class="line">      <span class="attr">test:</span> [<span class="string">&quot;CMD-SHELL&quot;</span>, <span class="string">&quot;wget -q --spider --proxy off localhost:8080/ping || exit 1&quot;</span>]</span><br><span class="line"></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">traefik:</span></span><br><span class="line">    <span class="attr">external:</span> <span class="literal">true</span></span><br></pre>
+
+<p>值得注意的是，因为运营商屏蔽了<code>22</code>、<code>443</code>、<code>80</code>端口，于是我使用<code>52022</code>、<code>52443</code>、<code>52080</code>做映射替代，如未被屏蔽，请忽略。</p>
+<p>为了自动申请SSL证书，提交成功率，我才用DNS Challenge的方式校验有效性，因此需Cloudflare的环境信息，如果你的域名没有配置Cloudflare解析，可以根据<a target="_blank" rel="noopener" href="https://doc.traefik.io/traefik/master/https/acme/">这篇文章</a>置换相应变量。</p>
+<p><img src="/content/images/traefik/ddns.png" alt="image-20210311225314293" srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/traefik/ddns.png" class="lozad post-image"></p>
+<p>同时，我们在<code>traefik</code>目录下创建<code>traefik.toml</code>文件，作为全局配置文件，一般不会有改动。</p>
+<pre class="highlight"><span class="line"><span class="section">[global]</span></span><br><span class="line">  <span class="attr">checkNewVersion</span> = <span class="literal">false</span></span><br><span class="line">  <span class="attr">sendAnonymousUsage</span> = <span class="literal">false</span></span><br><span class="line"></span><br><span class="line"><span class="section">[log]</span></span><br><span class="line">  <span class="attr">level</span> = <span class="string">&quot;WARN&quot;</span></span><br><span class="line">  <span class="attr">format</span> = <span class="string">&quot;common&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="section">[api]</span></span><br><span class="line">  <span class="attr">dashboard</span> = <span class="literal">true</span></span><br><span class="line">  <span class="attr">insecure</span> = <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="section">[ping]</span></span><br><span class="line"></span><br><span class="line"><span class="section">[accessLog]</span></span><br><span class="line"></span><br><span class="line"><span class="section">[providers]</span></span><br><span class="line">  <span class="section">[providers.docker]</span></span><br><span class="line">    <span class="attr">watch</span> = <span class="literal">true</span></span><br><span class="line">    <span class="attr">exposedByDefault</span> = <span class="literal">false</span></span><br><span class="line">    <span class="attr">endpoint</span> = <span class="string">&quot;unix:///var/run/docker.sock&quot;</span></span><br><span class="line">    <span class="attr">swarmMode</span> = <span class="literal">false</span></span><br><span class="line">    <span class="attr">useBindPortIP</span> = <span class="literal">false</span></span><br><span class="line">    <span class="attr">network</span> = <span class="string">&quot;traefik&quot;</span></span><br><span class="line">  <span class="section">[providers.file]</span></span><br><span class="line">    <span class="attr">watch</span> = <span class="literal">true</span></span><br><span class="line">    <span class="attr">directory</span> = <span class="string">&quot;/etc/traefik/config&quot;</span></span><br><span class="line">    <span class="attr">debugLogGeneratedTemplate</span> = <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="section">[entryPoints]</span></span><br><span class="line">  <span class="section">[entryPoints.http]</span></span><br><span class="line">    <span class="attr">address</span> = <span class="string">&quot;:80&quot;</span></span><br><span class="line">  <span class="section">[entryPoints.https]</span></span><br><span class="line">    <span class="attr">address</span> = <span class="string">&quot;:443&quot;</span></span><br><span class="line">  <span class="section">[entryPoints.ssh]</span></span><br><span class="line">    <span class="attr">address</span> = <span class="string">&quot;:22&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="section">[certificatesResolvers.my.acme]</span></span><br><span class="line">  <span class="attr">email</span> = <span class="string">&quot;CLOUDFLARE登录邮箱&quot;</span></span><br><span class="line">  <span class="attr">storage</span> = <span class="string">&quot;/data/ssl/acme.json&quot;</span></span><br><span class="line">  <span class="section">[certificatesResolvers.my.acme.dnsChallenge]</span></span><br><span class="line">    <span class="attr">resolvers</span> = [<span class="string">&quot;1.1.1.1:53&quot;</span>, <span class="string">&quot;8.8.8.8:53&quot;</span>]</span><br><span class="line">    <span class="attr">provider</span> = <span class="string">&quot;cloudflare&quot;</span></span><br><span class="line">    <span class="attr">delayBeforeCheck</span> = <span class="number">30</span></span><br></pre>
+
+<p>随后，进入<code>config</code>目录。</p>
+<p>创建<code>dashboard.nas.yfgeek.com.toml</code>文件，作为traefik展示面板的配置文件，因为相对固化，所以采用文件配置文件的形式，traefik支持文件加载配置。</p>
+<pre class="highlight"><span class="line"><span class="section">[http.middlewares.dash-compress.compress]</span></span><br><span class="line"><span class="section">[http.middlewares.dash-auth.basicAuth]</span></span><br><span class="line">  <span class="attr">users</span> = [</span><br><span class="line">    <span class="string">&quot;test:$apr1$ux2tmr06$Qz5r/BNEfzdxriR/0o30Z1&quot;</span>,</span><br><span class="line">  ]</span><br><span class="line"></span><br><span class="line"><span class="section">[http.routers.dashboard]</span></span><br><span class="line">  <span class="attr">rule</span> = <span class="string">&quot;Host(`dashboard.nas.yfgeek.com`)&quot;</span></span><br><span class="line">  <span class="attr">entrypoints</span> = [<span class="string">&quot;http&quot;</span>]</span><br><span class="line">  <span class="attr">service</span> = <span class="string">&quot;dashboard@internal&quot;</span></span><br><span class="line">  <span class="attr">middlewares</span> = [<span class="string">&quot;dash-auth&quot;</span>, <span class="string">&quot;dash-compress&quot;</span>]</span><br><span class="line"></span><br><span class="line"><span class="section">[http.routers.api]</span></span><br><span class="line">  <span class="attr">rule</span> = <span class="string">&quot;Host(`dashboard.nas.yfgeek.com`) &amp;&amp; PathPrefix(`/api`)&quot;</span></span><br><span class="line">  <span class="attr">entrypoints</span> = [<span class="string">&quot;http&quot;</span>]</span><br><span class="line">  <span class="attr">service</span> = <span class="string">&quot;api@internal&quot;</span></span><br><span class="line">  <span class="attr">middlewares</span> = [<span class="string">&quot;dash-auth&quot;</span>, <span class="string">&quot;dash-compress&quot;</span>]</span><br><span class="line"></span><br><span class="line"><span class="section">[http.routers.ping]</span></span><br><span class="line">  <span class="attr">rule</span> = <span class="string">&quot;Host(`dashboard.nas.yfgeek.com`) &amp;&amp; PathPrefix(`/ping`)&quot;</span></span><br><span class="line">  <span class="attr">entrypoints</span> = [<span class="string">&quot;http&quot;</span>]</span><br><span class="line">  <span class="attr">service</span> = <span class="string">&quot;ping@internal&quot;</span></span><br><span class="line">  <span class="attr">middlewares</span> = [<span class="string">&quot;dash-auth&quot;</span>, <span class="string">&quot;dash-compress&quot;</span>]</span><br></pre>
+
+<p>这个文件中，我们设置了一个用于验证的中间件，进入网站之前会默认进行验证，密码是<em>htpasswd</em>生成规则，例子中用户名是test，密码是test，如需定制，可到<a target="_blank" rel="noopener" href="https://hostingcanada.org/htpasswd-generator/">这个网站生成密码</a>。</p>
+<p>全部创建好后，目录结构如下：</p>
+<blockquote>
+<p>|____config<br>| |____dashboard.nas.yfgeek.com.toml<br>|____ssl<br>|____docker-compose.yml<br>|____traefik.toml</p>
+</blockquote>
+<p>确认无误，我们使用启动大法，执行如下命令。</p>
+<pre class="highlight"><span class="line">docker-compose up -d</span><br><span class="line">docker container logs traefik -f</span><br></pre>
+
+<p>不出意外，服务即将启动成功，可以看到日志，如果有问题就见招拆招即可。</p>
+<p><img src="/content/images/traefik/dashboard.png" alt="image-20210311225314293" srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/traefik/dashboard.png" class="lozad post-image"></p>
+<h1 id="Gitea-部署"><a href="#Gitea-部署" class="headerlink" title="Gitea 部署"></a>Gitea 部署</h1><p>traefik启动好后，我们还没有应用接入，接下来，整理一下原有的gitea容器，将其写为docker compose文件，同理，在docker目录下新建一个gitea目录。</p>
+<pre class="highlight"><span class="line"><span class="built_in">cd</span> /volume1/docker/</span><br><span class="line"><span class="built_in">mkdir</span> gitea</span><br><span class="line"><span class="built_in">cd</span> gitea</span><br><span class="line"><span class="built_in">touch</span> docker-compose.yml</span><br></pre>
+
+<p><code>docker-compose.yml </code>参考如下：</p>
+<pre class="highlight"><span class="line"><span class="attr">version:</span> <span class="string">&#x27;3&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">gitea:</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">gitea</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">gitea/gitea:latest</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">always</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">USER_UID=1000</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">USER_GID=1000</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik</span></span><br><span class="line">    <span class="attr">expose:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">3000</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">22</span></span><br><span class="line">    <span class="attr">labels:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik.enable=true</span></span><br><span class="line">      <span class="comment"># 设置HTTP强制跳转HTTPS 中间件</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik.http.middlewares.redirect-https.redirectscheme.scheme=https</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik.http.middlewares.redirect-https.redirectscheme.port=52443</span></span><br><span class="line"></span><br><span class="line">      <span class="comment"># HTTP配置</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik.http.routers.gitea-web.rule=Host(`git.nas.yfgeek.com`,`git.yfgeek.com`)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik.http.routers.gitea-web.entrypoints=http</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik.http.routers.gitea-web.service=gitea-web</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik.http.routers.gitea-web.middlewares=redirect-https</span></span><br><span class="line"></span><br><span class="line">      <span class="comment"># HTTPS配置</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik.http.routers.gitea-web-secure.rule=Host(`git.nas.yfgeek.com`,`git.yfgeek.com`)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik.http.routers.gitea-web-secure.entrypoints=https</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik.http.routers.gitea-web-secure.service=gitea-web</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik.http.routers.gitea-web-secure.tls=true</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik.http.routers.gitea-web-secure.tls.certresolver=my</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik.http.services.gitea-web.loadbalancer.server.port=3000</span></span><br><span class="line"></span><br><span class="line">      <span class="comment"># SSH配置</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik.tcp.routers.gitea-ssh.rule=HostSNI(`*`)</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik.tcp.routers.gitea-ssh.entrypoints=ssh</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik.tcp.routers.gitea-ssh.service=gitea-ssh</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">traefik.tcp.services.gitea-ssh.loadbalancer.server.port=22</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/volume1/docker/gitea:/data</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">traefik:</span></span><br><span class="line">    <span class="attr">external:</span> <span class="literal">true</span></span><br></pre>
+
+<p>traefik是通过增加<code>label</code>的方式，自动注册服务的，无需任何配置文件，实时生效，如果容器挂了，转发关系自动失效。配置文件中，利用<code>redirectscheme</code>的中间件方式，增加了HTTP强制跳转至HTTPS。</p>
+<p>针对HTTPS的访问方式，traefik会自动注册访问域名<code>rule=Host(`git.nas.yfgeek.com`,`git.yfgeek.com`)</code>的两个域名的，因此一定要确认无误。</p>
+<p>同时，为了实现后续的SSL自动签发、host自动注册，我在DDNS中增加了域名的泛解析配置。</p>
+<p>确认无误后，执行如下命令</p>
+<pre class="highlight"><span class="line">docker-compose up -d</span><br></pre>
+
+<p>这里有一个小坑，值得注意，acme申请证书需要一段时间，如果配置信息有误，是不会申请成功的。因此需要查看下traefik的日志。</p>
+<pre class="highlight"><span class="line">docker container logs traefik -f</span><br></pre>
+
+<p>找到问题见招拆招，如果是权限等问题，exec进入容器，通过chmod命令解决即可。</p>
+<p>随后访问域名的HTTP(<a href="http://git.yfgeek.com:52080)，将被强制跳转至HTTPS(https://git.yfgeek.com:52443)，即可看到SSL证书自动申请、配置成功。与此同时，基于TCP的SSH服务也被顺利转发。">http://git.yfgeek.com:52080)，将被强制跳转至HTTPS(https://git.yfgeek.com:52443)，即可看到SSL证书自动申请、配置成功。与此同时，基于TCP的SSH服务也被顺利转发。</a></p>
+<p><img src="/content/images/traefik/gitea.png" alt="image-20210311225314293" srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/traefik/gitea.png" class="lozad post-image"></p>
+<p>反过来，我们查看dashboard，即可看到gitea的服务已经成功在dashboard中注册了，并且一切顺利。</p>
+<p><img src="/content/images/traefik/gitea2.png" alt="image-20210311225314293" srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/traefik/gitea2.png" class="lozad post-image"></p>
+<p><img src="/content/images/traefik/gitea3.png" alt="image-20210311225314293" srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/traefik/gitea3.png" class="lozad post-image"></p>
+<p>类似的，如果后续增加新的docker应用，可直接编辑docker compose文件，增加label，配置域名，直接解析、自动申请SSL，方便极了，生产力得到了极大的提升。</p>
+<p>下一期我将讲讲如何<code>traefik</code>+<code>ptomethus</code>+<code>granafa</code>，实现自动采集数据，归集日志，构建网站监控系统，欢迎持续关注。</p>
+<p>参考文章</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://juejin.cn/post/6844904053722316813">https://juejin.cn/post/6844904053722316813</a></li>
+<li><a target="_blank" rel="noopener" href="https://soulteary.com/2020/02/01/configure-traefik-v2-based-web-server.html">https://soulteary.com/2020/02/01/configure-traefik-v2-based-web-server.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.qikqiak.com/traefik-book/">https://www.qikqiak.com/traefik-book/</a></li>
+<li><a target="_blank" rel="noopener" href="https://doc.traefik.io/traefik/master/https/acme/">https://doc.traefik.io/traefik/master/https/acme/</a></li>
+</ol>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  <div class="nav-item-prev">
+    <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/" class="nav-link">
+      <i class="iconfont icon-left nav-prev-icon"></i>
+      <div>
+        <div class="nav-label">上一篇</div>
+        
+        <div class="nav-title">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合 </div>
+        
+      </div>
+    </a>
+  </div>
+  
+  
+  <div class="nav-item-next">
+    <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">NUC5i5RYH Big Sur 黑苹果安装教程 </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Traefik"><span class="toc-text">Traefik</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Traefik-%E9%83%A8%E7%BD%B2"><span class="toc-text">Traefik 部署</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Gitea-%E9%83%A8%E7%BD%B2"><span class="toc-text">Gitea 部署</span></a></li></ol>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>72</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>26</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>26</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Traefik"><span class="toc-text">Traefik</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Traefik-%E9%83%A8%E7%BD%B2"><span class="toc-text">Traefik 部署</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Gitea-%E9%83%A8%E7%BD%B2"><span class="toc-text">Gitea 部署</span></a></li></ol>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/traefik/" title="traefik"><div class="tags-list-item">traefik</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+    <a href="/tags/RaspberryPi/" title="RaspberryPi"><div class="tags-list-item">RaspberryPi</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Traefik"><span class="toc-text">Traefik</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Traefik-%E9%83%A8%E7%BD%B2"><span class="toc-text">Traefik 部署</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Gitea-%E9%83%A8%E7%BD%B2"><span class="toc-text">Gitea 部署</span></a></li></ol>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-19</div>
+        <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/"><div class="recent-posts-item-content">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-10</div>
+        <a href="/2021/03/10/Traefik 2 群晖硬核指南/"><div class="recent-posts-item-content">Traefik 2 群晖硬核指南</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-02-26</div>
+        <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Big Sur 黑苹果安装教程</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2024
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>

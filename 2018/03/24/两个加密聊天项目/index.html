@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>两个加密聊天项目</title>
+  
+  
+  <meta property="og:title" content="两个加密聊天项目">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2018/03/24/%E4%B8%A4%E4%B8%AA%E5%8A%A0%E5%AF%86%E8%81%8A%E5%A4%A9%E9%A1%B9%E7%9B%AE/index.html">
+  
+  
+  <meta property="og:img" content="/content/images/blog/me.jpg">
+  
+  
+  <meta property="og:img" content="Thinking as a Geek">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2018-03-24">
+  <meta property="og:article:modified_time" content="2024-05-15">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="Golang">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      两个加密聊天项目
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2018-03-24T07:09:46.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2018-03-24</span>
+    </time>
+    
+    <span class="dot"></span>
+    
+    <a href="/categories/Golang/" class="post-meta-link">Golang</a>
+    
+    
+    
+    <span class="dot"></span>
+    <span>954 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/Golang/" class="post-meta-link">Golang</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <p>许多小伙伴看到我的GitHub最近动态关注了很多Golang的项目，不禁私信问我，是不是在学Go语言，没错，确实在学。本文探讨这两个项目是什么，并且解释一下如何使用<code>golang.org/x/crypto/otr</code>包。</p>
+<h1 id="为什么学Golang？"><a href="#为什么学Golang？" class="headerlink" title="为什么学Golang？"></a>为什么学Golang？</h1><p> <img src="http://i.imgur.com/UEdZpr4.png" alt="golang" srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="http://i.imgur.com/UEdZpr4.png" class="lozad post-image"></p>
+<p>因为Golang十分优秀呀，能够轻而易举的写很多服务端程序，并发能力十足且简单，不禁引起了我的注意。</p>
+<p>作为初学者，撸了两个项目，作为学习经验，代码很渣，只为实现功能，做一个小demo。</p>
+<h1 id="第一周-UDP加密聊天室"><a href="#第一周-UDP加密聊天室" class="headerlink" title="第一周 UDP加密聊天室"></a>第一周 UDP加密聊天室</h1><p><strong><a target="_blank" rel="noopener" href="https://github.com/yfgeek/chatroom">chatroom</a> - UDP加密聊天室</strong></p>
+<p>众所周知，做聊天室是作为学习服务端/客户端的最佳例子，但是单纯的撸一个聊天室未必太无聊了。</p>
+<p>这个项目的特色在于：</p>
+<ol>
+<li>能够自行生成配置文件，类似于某影的方式，客户端和服务端分别导入配置文件，就可以启动了。</li>
+<li>服务端自动生成AES-256的key，客户端记住base64形式的KEY文件就可以进行加密通信。</li>
+</ol>
+<p>强调安全性，是我一直的目的。</p>
+<p>配置文件</p>
+<pre class="highlight"><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">	<span class="attr">&quot;listen&quot;</span><span class="punctuation">:</span> <span class="string">&quot;:52915&quot;</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;remote&quot;</span><span class="punctuation">:</span> <span class="string">&quot;127.0.0.1&quot;</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;key&quot;</span><span class="punctuation">:</span> <span class="string">&quot;AzonXhdbWCYoAA52GTE9FnldZEN4KhEsInFJe1oHYAgzQTRsCyEdUlBOPzd3HxgFbTAudDZobiU8TQYbURBFWVdvMisNSn5UIw8kei0gcjl1cGkeFTV9U0tEY2YaCkdPYl9nZRQSBGsMQgFzVlxhL0hGAlV/O0A+OGoJfBwpE0w=&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre>
+
+<h1 id="第二周-OTR-端对端加密聊天"><a href="#第二周-OTR-端对端加密聊天" class="headerlink" title="第二周 OTR 端对端加密聊天"></a>第二周 OTR 端对端加密聊天</h1><p><strong><a target="_blank" rel="noopener" href="https://github.com/yfgeek/otrchat">otrchat</a> - OTR 端对端加密聊天</strong></p>
+<p>不要认为第一周和第二周的内容大同小异，其实区别大了。</p>
+<p>聊天室和聊天的区别在于：</p>
+<ol>
+<li>服务器要端对端的将消息传递给不同的客户端，不能单纯的广播给所有人</li>
+<li>要有查询所有在线用户并且选择性聊天功能</li>
+</ol>
+<p>此外，在这一周内还增加了：<strong>OTR协议</strong></p>
+<p>简单的说OTR协议有点类似于Telegram的“secret chat”功能，可以对聊天内容进行加密，任何第三方包括服务器都无法查看两者聊天的内容，在此前我也写过<a target="_blank" rel="noopener" href="http://blog.yfgeek.com/2016/12/06/OTR%E6%8A%80%E6%9C%AF%E6%8E%A2%E8%AE%A8/">一篇文章</a>专门用于解释该协议。</p>
+<p>关于<code>golang.org/x/crypto/otr</code>包的使用经验，可以概括如下：</p>
+<p>首先，发起聊天者A需要向被聊者发送数据包</p>
+<pre class="highlight"><span class="line">c.sendMessages &lt;- otr.QueryMessage</span><br></pre>
+
+<p>此后，<code>golang.org/x/crypto/otr</code>包会自动处理所有通信，包括互相发送公钥、签名、验证消息可靠性。</p>
+<p>发送</p>
+<pre class="highlight"><span class="line">msgToPeer, err := otrConv.Send([]<span class="type">byte</span>(msg))</span><br><span class="line">			checkError(err,<span class="string">&quot;otr conv sending&quot;</span>)</span><br><span class="line">			<span class="keyword">for</span> _, m := <span class="keyword">range</span> msgToPeer &#123;</span><br><span class="line">				c.sendMessages &lt;- <span class="type">string</span>(m)</span><br><span class="line">&#125;</span><br></pre>
+
+<p>接手及显示</p>
+<pre class="highlight"><span class="line"><span class="keyword">var</span> err <span class="type">error</span></span><br><span class="line">out, encrypted, _, msgToPeer, err := otrConv.Receive(bytes)</span><br><span class="line">checkError(err,<span class="string">&quot;new chat&quot;</span>)</span><br><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(out) &gt; <span class="number">0</span> &#123;</span><br><span class="line">	<span class="keyword">if</span> !encrypted &#123;</span><br><span class="line">		color.Red(<span class="string">&quot;&lt;OTR&gt; Conversation not yet encrypted!&quot;</span>)</span><br><span class="line">		color.Red(<span class="string">&quot;%s [%s] : %s&quot;</span>, m.UserName, m.Time, <span class="type">string</span>(out))</span><br><span class="line">	&#125;<span class="keyword">else</span>&#123;</span><br><span class="line">		color.Blue(<span class="string">&quot;%s [%s] : %s&quot;</span>, m.UserName, m.Time, <span class="type">string</span>(out))</span><br><span class="line">	&#125;</span><br><span class="line">	&#125;</span><br><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(msgToPeer) &gt; <span class="number">0</span> &#123;</span><br><span class="line">	<span class="keyword">for</span> _, msg := <span class="keyword">range</span> msgToPeer &#123;</span><br><span class="line">	c.sendMessages &lt;-<span class="type">string</span>(msg)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre>
+
+<p><code>msgToPeer</code> 表示OTR协议中需要完成额外的消息交换，所以需要单独的发送一遍。</p>
+<p>由于<code>otr</code>包的相关帮助甚少，坑很多，不明白为什么这个世界不大力推广端对端加密聊天。</p>
+<p>OTR协议下服务端所看到的通信内容如下：</p>
+<pre class="highlight"><span class="line">From 1 To 2 Message： ?OTRv2?</span><br><span class="line">From 2 To 1 Message： ?OTR:AAICAAAAxB+Iywuwg8aZG0gPZxY6anFes2KW4YT/rRrBZK50CC7kr+0p+jLXeU3VirUQMTW/eJkA8gKz9y2xYSxRRwLga0ATOx2AkOlENYT1MyXJFkAjgMD6SF6uPDy+apIIJkOiopW5T7vpON9Ogsh3XmV8i4T1yui9gs6mAuMT7PsLQ7b8rvd1WulRtquJtO9LKA1flDU7XsCAn4h4pobpCjOS7qQ6aZstlhFtNXD1ylLXrpJos3vBG7LZsH3zvouvG9FR94YlYuMAAAAg5t62vP0C+/LxRI7OJTWC5pMbv2yZqHE/yDQGclCsz0Q=.</span><br><span class="line">From 1 To 2 Message： ?OTR:AAIKAAAAwDem/luw0prZM/Nv23/7Q+6/HrpQ199BVm+hcA2YMSHm85MJhS+ym24EAy4lg45O2e8LX5BylK1CM+w55VqUIJ7QOBwN3WazIWuiYKXXTuIdSBLi52P4dulhaGydKPfqFFqRM3hL2etO5p9xdJ8LbF/4+8PEK8//R56gIZLPLZNTPD8onxLKF5UnWJS3A8OfvJFykKQtXLc6573Y3BsGZ1ywfs0jyMukE/szOV5goTqLOaAhQfpw7gRuaMMqmHYXoA==.</span><br><span class="line">From 2 To 1 Message： ?OTR:AAIRAAAAELaWJ2vpiHI8fmmdLgdFJ/0AAAHS43l5bWsQarN0F8UEWtJjgr/lxOT01s6PmNsY+WFAio3kzOBQnzleaqemtbmQMwfczDm9fLH2h1+qlf4q8b4SLco/MpLKjvNEjDNbrQ1d1hXRwiyTtcz7zGYxCcFc3xdHLuueL/zcTpcwcq8J1HSmLv+F2aoEzCywOW9sWtLzbikeUjA2mUSWr79krG9rkAHz2KVGL++rX1LWC/PQOVTzzmFKz1o4aK1qpna/9ef9ju6zxd9wvoOuXGJJi3NWGlkHUxXov8689j8HNJWkkl/YXxwit8Bk49WPvH/AKnhTwqBkfblguaEsHTPTli36yqNm3YKp+oP2IjrVzue9BWieT93c7BbpJUO8Fej1EBGGWxtPu+YE/ZlH+PwawUcjWCck16GbHr4fFPTYh4tVX3c2tJSEqVkpttRf7r70ucu1fqB+qrK95rcbkVIABRPg4xSuslRCQxhz/BwiN3ECmfRAI19jLBp/MO9FkqaqYc3Bws/50n13slet7mk7IVGt1xjZgdfuZEYGXDZzmUomraKp4Wnt6YsLI10zoEBUw4U0Vug4OJ+EY2gdpNTYYhJFLAUH6B+ktCO8c18pKglxtJJnSiBBNRpaAVwsldwWD77/vLekToFQRZeG6H7x0cuH23ZBqonHHHJX.</span><br><span class="line">From 1 To 2 Message： ?OTR:AAISAAAB0qTCp5GMIr0w9szym5OPRrrk5/DSuaO1xuwnLp9ic+JUsO0//k9Ju7qVdpNFValQOvdePheZsp1fbaRoa8dCjJWeZDQF9Rik0tjz+5xgepzmaUXxDtKH2kiYWvBMp+AI0BosDGXRsupMZNGTon7G08wEaSbi8UYLouPrylrswC09PYwiN6+yTxwOE4dv/4vnIXo2k4868I4Ag9kRQ56grPlWpa3jG1Hrgwvm8510MtvBD+UwGTFHXFz8MieimBtIdI/Do/9svh9LhNrvAlQCqxaf5b6Eaoz0mRI0XU3PSPi6Qu8ivsti0LbIho75uvqZYk6xo/nX0UQrs48vsAVmZzXyRYMZ4M9JC+VumnEtxl92oQ4SQzetfEusQ76capBH9YJVfjej6xvC8n4k0I4rGKi9WSWgd4pYi6JOfRI2Nl9xh22PO+g5PdxKyGMzjpqkj9jm4yyc5l6ukfA/FpPSdNJjd6AbAu8HI3Zmw6fHhx+t+znAvnaMbw2gQG9gxe0WlmhM4ySOOvAGTG7wf1Md7AcRfxxNWeyInHmf+JJ1T3O74cPh1a6H0QQxh2UkXjS03adQMwGXng4pejRZhcSAEIY/cMfdAFYohfsdlDhOiv9E3NdbDU1sBIMPMKkDfi5vPUJEoecarQ==.</span><br><span class="line">From 1 To 2 Message： ?OTR:AAIDAAAAAAEAAAABAAAAwO0jWIHSjaPxrZ7MtjgPYEbl9DGrA9idRzJA4vmdS6Lcc+JZbEdBqRH036j4Ie85mXLCWvqlPjYwKZNlQFbX5Rg+MMbqGl1Qcdk+Hfmd93pZf6Feg/yjlyBJOaCBWpTTpWzDyh+E2XZ3lZvlJxw1ogwatQn1VhicUXZzfDBSg1Dhw/jcAcXTn2wI+mmZ98rR9taBwgv41FN4mO7HhTkzUMQnJKPL9/zqtV6kWfwVYzXhaPoTnnbKa8L9hbYEMzy/OQAAAAAAAAABAAABADfvoGL7+tXt8VKqBj4JMwOsfhuH6PMlq47YQGf7l/5Dmszn2yVv+lemLj+YrcVxLOYO5WU0CGBjmr+52g+x/w3Dj0b+ak25y6H8bX3sPmcX/ZSgqTi+zt+IHqn207autlQVzvpt37g1grzWZvbn68a0obQqQp32jIXfOlYUFUv6cJDOvHk+3+1lRJdFFLjeP40OehnZ3AeOvT2wo6gNdEMFM4zgPtiskQtRxTFtFqs+KW/rkzefThdYhWpbMY/Nvpcf1S0Sy6HKLIqGwa7bkMa1coDfNma5fQzw856VWDFhQSq/PXT5aV4dDmXtYuBUs3YJoyWFGft03GDtZfdMQiqMDkTIJC2mB3O16CoDJBgXeM/0AQAAAAA=.</span><br><span class="line">From 2 To 1 Message： ?OTR:AAIDAAAAAAEAAAACAAAAwMpbV5DJJNyJODVA4cZmMXf76Ra+UJ0RtBqzbIbaWFfVoMWQwFypi+qktOnwFmYhuQr4O30Yy76xReJi1DRP72uWUudiyrFSJzSHPGLUqZ2RqVB+ovSifkuW8nQnq6UAbxQuWtYuKLOiaoK7EZ9+2RMcXOLx+h57Sd1x4IL2aZ+1y+X+vco1fcHTW79qcz1TCT0qfn7+cI9O1HaKt/O15C51Btemu0rthK5W+mId5ueTIKcove1Ao6BRxy0GvMewMwAAAAAAAAABAAABAH78/obuj6XrBlIb55u2fDpmu93ILP8pI9f2ozxwKpfi20f6sLif3cKPVN4of7i0iivtGcXBKf4g4Bo4hLx3nD33E9/aAeuxpy9Dr+uuHak9mUQA7HC07Yg2PrVUiNhV4QVj/XPg6A0xE040NRvNs5Ww9cZjHSOMg998zsGjaz528HkNQw9n06tF8uCRLh+XXkQnuV9Ln/JLd1wbWybJGMlQh82SYhgW+B/GONUG2nBo0ClBRU8aAWEGEsYVa6K6PQJzWBUjDInLdiYYauP7uo0nmkYxsTJNPbhA00RXER4LXpJq87lN4gihq+7cxr77plQEPi3Z/HwIWKmzgLlfi3W85bNg8E4gH8w1DEBMjZIgzADE/AAAAAA=.</span><br></pre>
+
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="https://raw.githubusercontent.com/yfgeek/otrchat/master/img/otr-1.png" class="lozad post-image"src="https://raw.githubusercontent.com/yfgeek/otrchat/master/img/otr-1.png"></p>
+<p>安全的无可匹敌！</p>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  <div class="nav-item-prev">
+    <a href="/2018/07/18/解决tailspind-spindump-kernal-task占用率过高-优化MacOS速度/" class="nav-link">
+      <i class="iconfont icon-left nav-prev-icon"></i>
+      <div>
+        <div class="nav-label">上一篇</div>
+        
+        <div class="nav-title">优化Mac OS速度 解决tailspind、spindump、kernel_task问题 </div>
+        
+      </div>
+    </a>
+  </div>
+  
+  
+  <div class="nav-item-next">
+    <a href="/2018/02/23/用树莓派构建智能家居中枢-HomeAssistant-Home-Bridge/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">用HomeAssistant + HomeBridge树莓派构建智能家居中枢 </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%AD%A6Golang%EF%BC%9F"><span class="toc-text">为什么学Golang？</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E5%91%A8-UDP%E5%8A%A0%E5%AF%86%E8%81%8A%E5%A4%A9%E5%AE%A4"><span class="toc-text">第一周 UDP加密聊天室</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E5%91%A8-OTR-%E7%AB%AF%E5%AF%B9%E7%AB%AF%E5%8A%A0%E5%AF%86%E8%81%8A%E5%A4%A9"><span class="toc-text">第二周 OTR 端对端加密聊天</span></a></li></ol>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>72</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>26</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>26</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%AD%A6Golang%EF%BC%9F"><span class="toc-text">为什么学Golang？</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E5%91%A8-UDP%E5%8A%A0%E5%AF%86%E8%81%8A%E5%A4%A9%E5%AE%A4"><span class="toc-text">第一周 UDP加密聊天室</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E5%91%A8-OTR-%E7%AB%AF%E5%AF%B9%E7%AB%AF%E5%8A%A0%E5%AF%86%E8%81%8A%E5%A4%A9"><span class="toc-text">第二周 OTR 端对端加密聊天</span></a></li></ol>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/traefik/" title="traefik"><div class="tags-list-item">traefik</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+    <a href="/tags/RaspberryPi/" title="RaspberryPi"><div class="tags-list-item">RaspberryPi</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%AD%A6Golang%EF%BC%9F"><span class="toc-text">为什么学Golang？</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E5%91%A8-UDP%E5%8A%A0%E5%AF%86%E8%81%8A%E5%A4%A9%E5%AE%A4"><span class="toc-text">第一周 UDP加密聊天室</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E5%91%A8-OTR-%E7%AB%AF%E5%AF%B9%E7%AB%AF%E5%8A%A0%E5%AF%86%E8%81%8A%E5%A4%A9"><span class="toc-text">第二周 OTR 端对端加密聊天</span></a></li></ol>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-19</div>
+        <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/"><div class="recent-posts-item-content">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-10</div>
+        <a href="/2021/03/10/Traefik 2 群晖硬核指南/"><div class="recent-posts-item-content">Traefik 2 群晖硬核指南</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-02-26</div>
+        <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Big Sur 黑苹果安装教程</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2024
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>

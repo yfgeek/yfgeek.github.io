@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</title>
+  
+  
+  <meta property="og:title" content="Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2021/03/19/Traefik%202%20%E7%9B%91%E6%8E%A7%E7%B3%BB%E7%BB%9F%20%E4%B9%8BGrafana%E3%80%81Prometheus%E3%80%81Loki%E5%AE%8C%E7%BE%8E%E7%BB%93%E5%90%88/index.html">
+  
+  
+  <meta property="og:img" content="/banners/traefik2.png">
+  
+  
+  <meta property="og:img" content="Thinking as a Geek">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2021-03-19">
+  <meta property="og:article:modified_time" content="2024-05-15">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="traefik">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<div class="image-wrapper">
+  <img src="/banners/traefik2.png" data-src="/banners/traefik2.png"
+    srcset="data:image/svg+xml,%3Csvg%20xmlns=&#39;http://www.w3.org/2000/svg&#39;%20viewBox=&#39;0%200%20300%20300&#39;%3E%3C/svg%3E"
+    class="image lozad"
+    alt="thumbnail"
+  >
+</div>
+
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2021-03-19T10:16:30.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2021-03-19</span>
+    </time>
+    
+    <span class="dot"></span>
+    
+    <a href="/categories/docker/" class="post-meta-link">docker</a>
+    
+    
+    
+    <span class="dot"></span>
+    <span>6.2k 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/traefik/" class="post-meta-link">traefik</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>按上篇文章《Traefik 2 群晖硬核指南》，文章阐述了容器时代下如何替代Nginx，搭建一个基于Traefik 2，搭建自动SSL、容器自动服务注册、自动域名解析的统一网关，网关是搭建好了，我们还需要做服务监控，才能做到心中有数，有据可查。</p>
+<p>本文以上篇文章为范本，再次全流程的介绍如何搭建Traefik、Grafana、Prometheus、Promtail、Loki，并且如何配置服务，实现自动化日志记录、监控。</p>
+<h1 id="效果图"><a href="#效果图" class="headerlink" title="效果图"></a>效果图</h1><p>二话不说，咱们先看效果吧。</p>
+<p><img src="/content/images/traefik/snap1.png" alt="监控大盘" srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/traefik/snap1.png" class="lozad post-image"></p>
+<p><img src="/content/images/traefik/snap2.png" alt="监控大盘" srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/traefik/snap2.png" class="lozad post-image"></p>
+<p><img src="/content/images/traefik/snap3.png" alt="日志检索" srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/traefik/snap3.png" class="lozad post-image"></p>
+<p><img src="/content/images/traefik/snap4.png" alt="日志检索" srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/traefik/snap4.png" class="lozad post-image"></p>
+<h1 id="Traefik"><a href="#Traefik" class="headerlink" title="Traefik"></a>Traefik</h1><p>按上篇文章，我们已经搭建了Traefik，但为了配合监控，我们需要对<code>docker-compose.yml</code>进行改造，因此，本文从头到尾的写一遍，您只需要看这一篇文章就够了，部分内容可能描述不够详细，有疑惑请到上一篇文章阅读。</p>
+<pre class="highlight"><span class="line"><span class="built_in">cd</span> /volume1/docker/</span><br><span class="line"><span class="built_in">mkdir</span> traefik</span><br><span class="line"><span class="built_in">cd</span> traefik</span><br><span class="line"><span class="built_in">mkdir</span> config</span><br><span class="line"><span class="built_in">mkdir</span> ssl</span><br><span class="line"><span class="comment"># 创建traefik专属网络</span></span><br><span class="line">docker network create traefik</span><br></pre>
+
+<p>亮出我们的利器，通过docker-compose启动，编辑刚刚创建的yml文件 <code>docker-compose.yml</code>：</p>
+<pre class="highlight"><span class="line"><span class="attr">version:</span> <span class="string">&#x27;3.7&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">traefik:</span></span><br><span class="line">    <span class="attr">container_name:</span> <span class="string">traefik</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">CF_API_EMAIL=CLOUDFLARE邮箱</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">CLOUDFLARE_DNS_API_TOKEN=CLOUDFLARE</span> <span class="string">API</span> <span class="string">TOKEN</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">CLOUDFLARE_ZONE_API_TOKEN=CLOUDFLARE</span> <span class="string">API</span> <span class="string">TOKEN</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">traefik:v2.1.3</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">always</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">target:</span> <span class="number">52080</span></span><br><span class="line">        <span class="attr">published:</span> <span class="number">52080</span></span><br><span class="line">        <span class="attr">mode:</span> <span class="string">host</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">target:</span> <span class="number">52443</span></span><br><span class="line">        <span class="attr">published:</span> <span class="number">52443</span></span><br><span class="line">        <span class="attr">mode:</span> <span class="string">host</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">target:</span> <span class="number">52022</span></span><br><span class="line">        <span class="attr">published:</span> <span class="number">52022</span></span><br><span class="line">        <span class="attr">mode:</span> <span class="string">host</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;8080:8080&quot;</span></span><br><span class="line">    <span class="attr">command:</span> <span class="string">traefik</span> <span class="string">--configFile</span> <span class="string">/etc/traefik.yml</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/var/run/docker.sock:/var/run/docker.sock:ro</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./ssl/:/data/ssl/:rw</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./traefik.yml:/etc/traefik.yml:ro</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./config/:/etc/traefik/config/:ro</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./logs/:/data/logs/:rw</span></span><br><span class="line">    <span class="attr">healthcheck:</span></span><br><span class="line">      <span class="attr">test:</span> [<span class="string">&quot;CMD-SHELL&quot;</span>, <span class="string">&quot;wget -q --spider --proxy off localhost:8080/ping || exit 1&quot;</span>]</span><br><span class="line">      <span class="attr">interval:</span> <span class="string">6h</span></span><br><span class="line">    <span class="attr">network_mode:</span> <span class="string">host</span></span><br><span class="line"></span><br><span class="line"></span><br></pre>
+
+<p>在根目录下新建文件<code>traefik.yml</code>，写入如下配置内容。</p>
+<pre class="highlight"><span class="line"><span class="attr">global:</span></span><br><span class="line">  <span class="attr">checkNewVersion:</span> <span class="literal">false</span></span><br><span class="line">  <span class="attr">sendAnonymousUsage:</span> <span class="literal">false</span></span><br><span class="line"></span><br><span class="line"><span class="attr">log:</span></span><br><span class="line">  <span class="attr">level:</span> <span class="string">&quot;WARN&quot;</span></span><br><span class="line">  <span class="attr">format:</span> <span class="string">&quot;common&quot;</span></span><br><span class="line">  <span class="attr">filePath:</span> <span class="string">&quot;/data/logs/traefik.log&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">api:</span></span><br><span class="line">  <span class="attr">dashboard:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">insecure:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="attr">ping:</span> &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="attr">accessLog:</span></span><br><span class="line">  <span class="attr">filePath:</span> <span class="string">&quot;/data/logs/access.log&quot;</span></span><br><span class="line">  <span class="attr">bufferingSize:</span> <span class="number">100</span></span><br><span class="line">  <span class="attr">format:</span> <span class="string">json</span></span><br><span class="line">  <span class="attr">filters:</span>    </span><br><span class="line">    <span class="attr">minDuration:</span> <span class="string">&quot;10ms&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">providers:</span></span><br><span class="line">  <span class="attr">docker:</span></span><br><span class="line">    <span class="attr">watch:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">exposedByDefault:</span> <span class="literal">false</span></span><br><span class="line">    <span class="attr">endpoint:</span> <span class="string">&quot;unix:///var/run/docker.sock&quot;</span></span><br><span class="line">    <span class="attr">swarmMode:</span> <span class="literal">false</span></span><br><span class="line">    <span class="attr">useBindPortIP:</span> <span class="literal">false</span></span><br><span class="line">    <span class="attr">network:</span> <span class="string">&quot;traefik&quot;</span></span><br><span class="line">  <span class="attr">file:</span></span><br><span class="line">    <span class="attr">watch:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">directory:</span> <span class="string">&quot;/etc/traefik/config&quot;</span></span><br><span class="line">    <span class="attr">debugLogGeneratedTemplate:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="attr">entryPoints:</span></span><br><span class="line">  <span class="attr">http:</span></span><br><span class="line">    <span class="attr">address:</span> <span class="string">&quot;:52080&quot;</span></span><br><span class="line">    <span class="attr">forwardedHeaders:</span></span><br><span class="line">      <span class="attr">insecure:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">https:</span></span><br><span class="line">    <span class="attr">address:</span> <span class="string">&quot;:52443&quot;</span></span><br><span class="line">    <span class="attr">forwardedHeaders:</span></span><br><span class="line">      <span class="attr">insecure:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">ssh:</span></span><br><span class="line">    <span class="attr">address:</span> <span class="string">&quot;:52022&quot;</span></span><br><span class="line">    <span class="attr">forwardedHeaders:</span></span><br><span class="line">      <span class="attr">insecure:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="attr">certificatesResolvers:</span></span><br><span class="line">  <span class="attr">my:</span></span><br><span class="line">    <span class="attr">acme:</span></span><br><span class="line">      <span class="attr">email:</span> <span class="string">&quot;CLOUDFLARE邮箱&quot;</span></span><br><span class="line">      <span class="attr">storage:</span> <span class="string">&quot;/data/ssl/acme.json&quot;</span></span><br><span class="line">      <span class="attr">dnsChallenge:</span></span><br><span class="line">        <span class="attr">resolvers:</span> [<span class="string">&quot;1.1.1.1:53&quot;</span>, <span class="string">&quot;8.8.8.8:53&quot;</span>]</span><br><span class="line">        <span class="attr">provider:</span> <span class="string">&quot;cloudflare&quot;</span></span><br><span class="line">        <span class="attr">delayBeforeCheck:</span> <span class="number">30</span></span><br><span class="line"><span class="attr">metrics:</span></span><br><span class="line">  <span class="attr">prometheus:</span></span><br><span class="line">    <span class="attr">buckets:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">0.1</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">0.3</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">1.2</span></span><br><span class="line">      <span class="bullet">-</span> <span class="number">5.0</span></span><br><span class="line"></span><br></pre>
+
+<p>值得注意的是，因为运营商屏蔽了<code>22</code>、<code>443</code>、<code>80</code>端口，于是我使用<code>52022</code>、<code>52443</code>、<code>52080</code>做映射替代，如未被屏蔽，请忽略。</p>
+<p>为了自动申请SSL证书，提交成功率，我才用DNS Challenge的方式校验有效性，因此需Cloudflare的环境信息，如果你的域名没有配置Cloudflare解析，可以根据<a target="_blank" rel="noopener" href="https://doc.traefik.io/traefik/master/https/acme/">这篇文章</a>置换相应变量。</p>
+<p><img src="/content/images/traefik/ddns.png" alt="image-20210311225314293" srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/traefik/ddns.png" class="lozad post-image"></p>
+<p>随后，进入<code>config</code>目录。</p>
+<p>创建<code>dashboard.nas.yfgeek.com.toml</code>文件，作为traefik展示面板的配置文件，因为相对固化，所以采用文件配置文件的形式，traefik支持文件加载配置。</p>
+<pre class="highlight"><span class="line"><span class="section">[http.middlewares.dash-compress.compress]</span></span><br><span class="line"><span class="section">[http.middlewares.dash-auth.basicAuth]</span></span><br><span class="line">  <span class="attr">users</span> = [</span><br><span class="line">    <span class="string">&quot;test:$apr1$ux2tmr06$Qz5r/BNEfzdxriR/0o30Z1&quot;</span>,</span><br><span class="line">  ]</span><br><span class="line"></span><br><span class="line"><span class="section">[http.routers.dashboard]</span></span><br><span class="line">  <span class="attr">rule</span> = <span class="string">&quot;Host(`dashboard.nas.yfgeek.com`)&quot;</span></span><br><span class="line">  <span class="attr">entrypoints</span> = [<span class="string">&quot;http&quot;</span>]</span><br><span class="line">  <span class="attr">service</span> = <span class="string">&quot;dashboard@internal&quot;</span></span><br><span class="line">  <span class="attr">middlewares</span> = [<span class="string">&quot;dash-auth&quot;</span>, <span class="string">&quot;dash-compress&quot;</span>]</span><br><span class="line"></span><br><span class="line"><span class="section">[http.routers.api]</span></span><br><span class="line">  <span class="attr">rule</span> = <span class="string">&quot;Host(`dashboard.nas.yfgeek.com`) &amp;&amp; PathPrefix(`/api`)&quot;</span></span><br><span class="line">  <span class="attr">entrypoints</span> = [<span class="string">&quot;http&quot;</span>]</span><br><span class="line">  <span class="attr">service</span> = <span class="string">&quot;api@internal&quot;</span></span><br><span class="line">  <span class="attr">middlewares</span> = [<span class="string">&quot;dash-auth&quot;</span>, <span class="string">&quot;dash-compress&quot;</span>]</span><br><span class="line"></span><br><span class="line"><span class="section">[http.routers.ping]</span></span><br><span class="line">  <span class="attr">rule</span> = <span class="string">&quot;Host(`dashboard.nas.yfgeek.com`) &amp;&amp; PathPrefix(`/ping`)&quot;</span></span><br><span class="line">  <span class="attr">entrypoints</span> = [<span class="string">&quot;http&quot;</span>]</span><br><span class="line">  <span class="attr">service</span> = <span class="string">&quot;ping@internal&quot;</span></span><br><span class="line">  <span class="attr">middlewares</span> = [<span class="string">&quot;dash-auth&quot;</span>, <span class="string">&quot;dash-compress&quot;</span>]</span><br></pre>
+
+<p>这个文件中，我们设置了一个用于验证的中间件，进入网站之前会默认进行验证，密码是<em>htpasswd</em>生成规则，例子中用户名是test，密码是test，如需定制，可到<a target="_blank" rel="noopener" href="https://hostingcanada.org/htpasswd-generator/">这个网站生成密码</a>。</p>
+<p>全部创建好后，目录结构如下：</p>
+<blockquote>
+<p>|____config<br>| |____dashboard.nas.yfgeek.com.toml<br>|____ssl<br>|____docker-compose.yml<br>|____traefik.yml</p>
+</blockquote>
+<p>确认无误，我们使用启动大法，执行如下命令。</p>
+<pre class="highlight"><span class="line">docker-compose up -d</span><br><span class="line">docker container logs traefik -f</span><br></pre>
+
+<p>不出意外，服务即将启动成功，可以看到日志，如果有问题就见招拆招即可。</p>
+<p>具体可参考：<a target="_blank" rel="noopener" href="https://github.com/yfgeek/traefik-docker-compose/tree/master/traefik">https://github.com/yfgeek/traefik-docker-compose/tree/master/traefik</a></p>
+<h1 id="搭建监控系统"><a href="#搭建监控系统" class="headerlink" title="搭建监控系统"></a>搭建监控系统</h1><p>监控系统，你可能跟我说ELK？别试了，我已经试过了，这个对内存要求太高了，群晖咱承受不起，最终采用的方案如下：</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/traefik/loki-art.png" class="lozad post-image"src="/content/images/traefik/loki-art.png"></p>
+<h2 id="Grafana"><a href="#Grafana" class="headerlink" title="Grafana"></a>Grafana</h2><p>Grafana 是一个用于监控和可视化观测的开源平台，支持非常丰富的数据源，在 Loki 技术栈中它专门用来展示来自 Prometheus 和 Loki 等数据源的时间序列数据。此外，还允许我们进行查询、可视化、报警等操作，可以用于创建、探索和共享数据 Dashboard，鼓励数据驱动的文化。</p>
+<h2 id="Prometheus"><a href="#Prometheus" class="headerlink" title="Prometheus"></a>Prometheus</h2><p>Prometheus受启发于Google的Brogmon监控系统（相似的Kubernetes是从Google的Brog系统演变而来），是一个开放性的监控解决方案，用户可以非常方便的安装和使用Prometheus并且能够非常方便的对其进行扩展。基于全新存储层的2.0版本，能更好地与容器平台、云平台配合。</p>
+<h2 id="Promtail"><a href="#Promtail" class="headerlink" title="Promtail"></a>Promtail</h2><p>Promtail 是用来将容器日志发送到 Loki 或者 Grafana 服务上的日志收集工具，该工具主要包括发现采集目标以及给日志流添加上 Label 标签，然后发送给 Loki，另外 Promtail 的服务发现是基于 Prometheus 的服务发现机制实现的。</p>
+<h2 id="Loki"><a href="#Loki" class="headerlink" title="Loki"></a>Loki</h2><p>Loki 是一个受 Prometheus 启发的可以水平扩展、高可用以及支持多租户的日志聚合系统，使用了和 Prometheus 相同的服务发现机制，将标签添加到日志流中而不是构建全文索引。正因为如此，从 Promtail 接收到的日志和应用的 metrics 指标就具有相同的标签集。所以，它不仅提供了更好的日志和指标之间的上下文切换，还避免了对日志进行全文索引。</p>
+<h2 id="开搞"><a href="#开搞" class="headerlink" title="开搞"></a>开搞</h2><pre class="highlight"><span class="line"><span class="built_in">cd</span> /volume1/docker/</span><br><span class="line"><span class="built_in">mkdir</span> monitoring</span><br></pre>
+
+<p>拷贝如下目录的全部文件：<a target="_blank" rel="noopener" href="https://github.com/yfgeek/traefik-docker-compose/tree/master/monitoring">https://github.com/yfgeek/traefik-docker-compose/tree/master/monitoring</a></p>
+<p>编辑<code>docker-compose.yml</code>文件，更改granafa的host地址，可更改为内网。</p>
+<pre class="highlight"><span class="line"><span class="attr">version:</span> <span class="string">&#x27;3.7&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">prometheus:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">prom/prometheus</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./prometheus/:/etc/prometheus/</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">prometheus_data:/prometheus</span></span><br><span class="line">    <span class="attr">command:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&#x27;--config.file=/etc/prometheus/prometheus.yml&#x27;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&#x27;--storage.tsdb.path=/prometheus&#x27;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&#x27;--web.console.libraries=/usr/share/prometheus/console_libraries&#x27;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&#x27;--web.console.templates=/usr/share/prometheus/consoles&#x27;</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">inbound</span></span><br><span class="line">    <span class="attr">labels:</span></span><br><span class="line">       <span class="bullet">-</span> <span class="string">&quot;traefik.enable=true&quot;</span></span><br><span class="line">       <span class="bullet">-</span> <span class="string">&quot;traefik.http.routers.prometheus.rule=Host(`prometheus`)&quot;</span></span><br><span class="line">       <span class="bullet">-</span> <span class="string">&quot;traefik.http.routers.prometheus.entrypoints=http&quot;</span></span><br><span class="line">       <span class="bullet">-</span> <span class="string">&quot;traefik.http.routers.prometheus.service=prometheus&quot;</span></span><br><span class="line">       <span class="bullet">-</span> <span class="string">&quot;traefik.http.services.prometheus.loadbalancer.server.port=9090&quot;</span></span><br><span class="line">       <span class="bullet">-</span> <span class="string">&quot;traefik.docker.network=inbound&quot;</span></span><br><span class="line">  </span><br><span class="line">  <span class="attr">grafana:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">grafana/grafana</span></span><br><span class="line">    <span class="attr">depends_on:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">prometheus</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">grafana_data:/var/lib/grafana</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./grafana/provisioning/:/etc/grafana/provisioning/</span></span><br><span class="line">    <span class="attr">env_file:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">./grafana/config.monitoring</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">inbound</span></span><br><span class="line">    <span class="attr">user:</span> <span class="string">&quot;472&quot;</span></span><br><span class="line">    <span class="attr">labels:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="string">&quot;traefik.enable=true&quot;</span></span><br><span class="line">        <span class="bullet">-</span> <span class="string">&quot;traefik.http.routers.grafana.rule=Host(`grf.nas.yfgeek.com`,`grafana`)&quot;</span></span><br><span class="line">        <span class="bullet">-</span> <span class="string">&quot;traefik.http.routers.grafana.entrypoints=http&quot;</span></span><br><span class="line">        <span class="bullet">-</span> <span class="string">&quot;traefik.http.routers.grafana.service=grafana&quot;</span></span><br><span class="line">        <span class="bullet">-</span> <span class="string">&quot;traefik.http.services.grafana.loadbalancer.server.port=3000&quot;</span></span><br><span class="line">        <span class="bullet">-</span> <span class="string">&quot;traefik.docker.network=inbound&quot;</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">loki:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">grafana/loki</span></span><br><span class="line">    <span class="attr">expose:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;3100&quot;</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/volume1/docker/prometheus/loki/local-config.yaml:/etc/loki/local-config.yaml</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">loki_data:/loki</span></span><br><span class="line">    <span class="attr">command:</span> <span class="string">-config.file=/etc/loki/local-config.yaml</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">inbound</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">promtail:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">grafana/promtail</span></span><br><span class="line">    <span class="attr">depends_on:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">loki</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/volume1/docker/traefik/logs:/var/log</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/volume1/docker/prometheus/promtail/config.yml:/etc/promtail/config.yml</span></span><br><span class="line">    <span class="attr">command:</span> <span class="string">-config.file=/etc/promtail/config.yml</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">inbound</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">inbound:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">inbound</span></span><br><span class="line"></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">    <span class="attr">prometheus_data:</span> &#123;&#125;</span><br><span class="line">    <span class="attr">grafana_data:</span> &#123;&#125;</span><br><span class="line">    <span class="attr">loki_data:</span> &#123;&#125;</span><br></pre>
+
+<p>确认无误后，执行大法。</p>
+<pre class="highlight"><span class="line">docker-compose up -d</span><br></pre>
+
+<p>等待docker都拉取完毕，创建好容器后，我们便可以通过访问设置的host地址，进入granafa登陆界面。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/traefik/grf1.png" class="lozad post-image"src="/content/images/traefik/grf1.png"></p>
+<p>输入用户名admin 密码admin （密码后续可改），进入监控页面，点击如图所示的按钮，随后点击Add data source，添加数据源。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/traefik/grf2.png" class="lozad post-image"src="/content/images/traefik/grf2.png"></p>
+<p>依次添加prometheus、loki</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/traefik/grf3.png" class="lozad post-image"src="/content/images/traefik/grf3.png"></p>
+<p>具体配置如下</p>
+<p>prometheus地址：<a target="_blank" rel="noopener" href="http://prometheus:9090/">http://prometheus:9090</a></p>
+<p>loki地址：<a target="_blank" rel="noopener" href="http://loki:3100/">http://loki:3100</a></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/traefik/grf4.png" class="lozad post-image"src="/content/images/traefik/grf4.png"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/traefik/grf5.png" class="lozad post-image"src="/content/images/traefik/grf5.png"></p>
+<p>设置完成后，点击Save &amp; Test 看到绿色成功，即设置成功。</p>
+<h3 id="日志检索"><a href="#日志检索" class="headerlink" title="日志检索"></a>日志检索</h3><p>数据源添加完毕后，可以到Explore页面中，检查日志是否上送。</p>
+<p>!grf6.png)</p>
+<h3 id="Traefik-大盘"><a href="#Traefik-大盘" class="headerlink" title="Traefik 大盘"></a>Traefik 大盘</h3><p>点击加号按钮，点击Import，通过如下ID导入 12250，随后Import即可。</p>
+<h3 id="Loki-大盘"><a href="#Loki-大盘" class="headerlink" title="Loki 大盘"></a>Loki 大盘</h3><p>因为我在Promtail过程中更改了默认的job名字，可根据ID 13713导入后，手动更改配置，也可以直接通过JSON导入。点击加号按钮，点击Import，通过如下JSON导入：</p>
+<pre class="highlight"><span class="line">&#123;&quot;annotations&quot;:&#123;&quot;list&quot;:[&#123;&quot;builtIn&quot;:1,&quot;datasource&quot;:&quot;-- Grafana --&quot;,&quot;enable&quot;:true,&quot;hide&quot;:true,&quot;iconColor&quot;:&quot;rgba(0, 211, 255, 1)&quot;,&quot;name&quot;:&quot;Annotations &amp; Alerts&quot;,&quot;type&quot;:&quot;dashboard&quot;&#125;]&#125;,&quot;description&quot;:&quot;Loki version 2 showcase using JSON Traefik access logs.&quot;,&quot;editable&quot;:true,&quot;gnetId&quot;:13713,&quot;graphTooltip&quot;:0,&quot;id&quot;:4,&quot;links&quot;:[],&quot;panels&quot;:[&#123;&quot;datasource&quot;:&quot;Loki&quot;,&quot;description&quot;:&quot;&quot;,&quot;fieldConfig&quot;:&#123;&quot;defaults&quot;:&#123;&quot;custom&quot;:&#123;&#125;,&quot;thresholds&quot;:&#123;&quot;mode&quot;:&quot;absolute&quot;,&quot;steps&quot;:[]&#125;&#125;,&quot;overrides&quot;:[]&#125;,&quot;gridPos&quot;:&#123;&quot;h&quot;:2,&quot;w&quot;:24,&quot;x&quot;:0,&quot;y&quot;:0&#125;,&quot;id&quot;:32,&quot;interval&quot;:&quot;&quot;,&quot;options&quot;:&#123;&quot;content&quot;:&quot;&lt;div class=\&quot;left dashboard-header\&quot;&gt;\n   &lt;img src=\&quot;https://marketplace-assets.digitalocean.com/logos/loki-logo.svg\&quot; style=\&quot;height:29px;\&quot;/&gt;\n  &lt;span&gt;Traefik Dashboard&lt;/span&gt;\n&lt;/div&gt;&quot;,&quot;mode&quot;:&quot;html&quot;&#125;,&quot;pluginVersion&quot;:&quot;7.4.3&quot;,&quot;targets&quot;:[&#123;&quot;expr&quot;:&quot;loki_build_info&quot;,&quot;format&quot;:&quot;table&quot;,&quot;instant&quot;:false,&quot;interval&quot;:&quot;&quot;,&quot;legendFormat&quot;:&quot;&quot;,&quot;refId&quot;:&quot;A&quot;&#125;],&quot;timeFrom&quot;:null,&quot;timeShift&quot;:null,&quot;title&quot;:&quot;&quot;,&quot;transparent&quot;:true,&quot;type&quot;:&quot;text&quot;&#125;,&#123;&quot;datasource&quot;:&quot;Loki&quot;,&quot;description&quot;:&quot;&quot;,&quot;fieldConfig&quot;:&#123;&quot;defaults&quot;:&#123;&quot;custom&quot;:&#123;&#125;,&quot;mappings&quot;:[],&quot;thresholds&quot;:&#123;&quot;mode&quot;:&quot;absolute&quot;,&quot;steps&quot;:[&#123;&quot;color&quot;:&quot;purple&quot;,&quot;value&quot;:null&#125;]&#125;,&quot;unit&quot;:&quot;short&quot;&#125;,&quot;overrides&quot;:[]&#125;,&quot;gridPos&quot;:&#123;&quot;h&quot;:4,&quot;w&quot;:6,&quot;x&quot;:0,&quot;y&quot;:2&#125;,&quot;id&quot;:4,&quot;interval&quot;:&quot;1m&quot;,&quot;options&quot;:&#123;&quot;colorMode&quot;:&quot;background&quot;,&quot;graphMode&quot;:&quot;area&quot;,&quot;justifyMode&quot;:&quot;auto&quot;,&quot;orientation&quot;:&quot;auto&quot;,&quot;reduceOptions&quot;:&#123;&quot;calcs&quot;:[&quot;sum&quot;],&quot;fields&quot;:&quot;&quot;,&quot;values&quot;:false&#125;,&quot;text&quot;:&#123;&#125;,&quot;textMode&quot;:&quot;value&quot;&#125;,&quot;pluginVersion&quot;:&quot;7.4.3&quot;,&quot;targets&quot;:[&#123;&quot;expr&quot;:&quot;sum(count_over_time(&#123;filename=\&quot;/var/log/access.log\&quot;&#125; |= \&quot;RequestProtocol\&quot; [$__interval]))&quot;,&quot;legendFormat&quot;:&quot;&quot;,&quot;refId&quot;:&quot;A&quot;&#125;],&quot;timeFrom&quot;:&quot;1h&quot;,&quot;timeShift&quot;:null,&quot;title&quot;:&quot;Total requests  &quot;,&quot;transformations&quot;:[],&quot;transparent&quot;:true,&quot;type&quot;:&quot;stat&quot;&#125;,&#123;&quot;datasource&quot;:&quot;Loki&quot;,&quot;description&quot;:&quot;&quot;,&quot;fieldConfig&quot;:&#123;&quot;defaults&quot;:&#123;&quot;custom&quot;:&#123;&#125;,&quot;mappings&quot;:[],&quot;thresholds&quot;:&#123;&quot;mode&quot;:&quot;absolute&quot;,&quot;steps&quot;:[&#123;&quot;color&quot;:&quot;light-blue&quot;,&quot;value&quot;:null&#125;]&#125;,&quot;unit&quot;:&quot;short&quot;&#125;,&quot;overrides&quot;:[]&#125;,&quot;gridPos&quot;:&#123;&quot;h&quot;:8,&quot;w&quot;:9,&quot;x&quot;:6,&quot;y&quot;:2&#125;,&quot;id&quot;:5,&quot;interval&quot;:&quot;30s&quot;,&quot;options&quot;:&#123;&quot;colorMode&quot;:&quot;background&quot;,&quot;graphMode&quot;:&quot;area&quot;,&quot;justifyMode&quot;:&quot;auto&quot;,&quot;orientation&quot;:&quot;auto&quot;,&quot;reduceOptions&quot;:&#123;&quot;calcs&quot;:[&quot;sum&quot;],&quot;fields&quot;:&quot;&quot;,&quot;values&quot;:false&#125;,&quot;text&quot;:&#123;&#125;,&quot;textMode&quot;:&quot;auto&quot;&#125;,&quot;pluginVersion&quot;:&quot;7.4.3&quot;,&quot;targets&quot;:[&#123;&quot;expr&quot;:&quot;sum by (OriginStatus) (count_over_time(&#123;filename=\&quot;/var/log/access.log\&quot;&#125; |= \&quot;RequestProtocol\&quot; | json |  __error__=\&quot;\&quot; [$__interval]))&quot;,&quot;legendFormat&quot;:&quot;HTTP Status: &#123;&#123;OriginStatus&#125;&#125;&quot;,&quot;refId&quot;:&quot;A&quot;&#125;],&quot;timeFrom&quot;:&quot;3h&quot;,&quot;timeShift&quot;:null,&quot;title&quot;:&quot;Requests per status code&quot;,&quot;transformations&quot;:[],&quot;transparent&quot;:true,&quot;type&quot;:&quot;stat&quot;&#125;,&#123;&quot;cacheTimeout&quot;:null,&quot;datasource&quot;:&quot;Loki&quot;,&quot;description&quot;:&quot;&quot;,&quot;fieldConfig&quot;:&#123;&quot;defaults&quot;:&#123;&quot;custom&quot;:&#123;&#125;,&quot;mappings&quot;:[],&quot;noValue&quot;:&quot;0&quot;,&quot;thresholds&quot;:&#123;&quot;mode&quot;:&quot;absolute&quot;,&quot;steps&quot;:[&#123;&quot;color&quot;:&quot;purple&quot;,&quot;value&quot;:null&#125;,&#123;&quot;color&quot;:&quot;red&quot;,&quot;value&quot;:80&#125;]&#125;,&quot;unit&quot;:&quot;percent&quot;&#125;,&quot;overrides&quot;:[]&#125;,&quot;gridPos&quot;:&#123;&quot;h&quot;:4,&quot;w&quot;:4,&quot;x&quot;:15,&quot;y&quot;:2&#125;,&quot;id&quot;:19,&quot;interval&quot;:&quot;5m&quot;,&quot;links&quot;:[],&quot;maxDataPoints&quot;:1,&quot;options&quot;:&#123;&quot;colorMode&quot;:&quot;background&quot;,&quot;graphMode&quot;:&quot;none&quot;,&quot;justifyMode&quot;:&quot;center&quot;,&quot;orientation&quot;:&quot;auto&quot;,&quot;reduceOptions&quot;:&#123;&quot;calcs&quot;:[&quot;mean&quot;],&quot;fields&quot;:&quot;&quot;,&quot;values&quot;:false&#125;,&quot;text&quot;:&#123;&#125;,&quot;textMode&quot;:&quot;value&quot;&#125;,&quot;pluginVersion&quot;:&quot;7.4.3&quot;,&quot;targets&quot;:[&#123;&quot;expr&quot;:&quot; sum(rate(&#123;filename=\&quot;/var/log/access.log\&quot;&#125; |~ \&quot;RequestProtocol\&quot; | json | OriginStatus &gt;= 400 |__error__=\&quot;\&quot;[$__interval])) / (sum(rate(&#123;job=\&quot;/var/log/traefik.log\&quot;&#125; |~ \&quot;RequestProtocol\&quot; | json | __error__=\&quot;\&quot;[$__interval])) / 100)&quot;,&quot;legendFormat&quot;:&quot;&quot;,&quot;refId&quot;:&quot;A&quot;&#125;],&quot;timeFrom&quot;:&quot;1h&quot;,&quot;timeShift&quot;:null,&quot;title&quot;:&quot;% of  4/5xx &quot;,&quot;transparent&quot;:true,&quot;type&quot;:&quot;stat&quot;&#125;,&#123;&quot;aliasColors&quot;:&#123;&#125;,&quot;bars&quot;:false,&quot;cacheTimeout&quot;:null,&quot;dashLength&quot;:10,&quot;dashes&quot;:false,&quot;datasource&quot;:&quot;Loki&quot;,&quot;description&quot;:&quot;&quot;,&quot;fieldConfig&quot;:&#123;&quot;defaults&quot;:&#123;&quot;custom&quot;:&#123;&#125;,&quot;thresholds&quot;:&#123;&quot;mode&quot;:&quot;absolute&quot;,&quot;steps&quot;:[]&#125;,&quot;unit&quot;:&quot;none&quot;&#125;,&quot;overrides&quot;:[]&#125;,&quot;fill&quot;:1,&quot;fillGradient&quot;:0,&quot;gridPos&quot;:&#123;&quot;h&quot;:4,&quot;w&quot;:5,&quot;x&quot;:19,&quot;y&quot;:2&#125;,&quot;hiddenSeries&quot;:false,&quot;id&quot;:36,&quot;interval&quot;:&quot;1m&quot;,&quot;legend&quot;:&#123;&quot;avg&quot;:false,&quot;current&quot;:false,&quot;hideEmpty&quot;:true,&quot;hideZero&quot;:true,&quot;max&quot;:false,&quot;min&quot;:false,&quot;show&quot;:false,&quot;total&quot;:false,&quot;values&quot;:false&#125;,&quot;lines&quot;:true,&quot;linewidth&quot;:1,&quot;links&quot;:[],&quot;nullPointMode&quot;:&quot;null&quot;,&quot;options&quot;:&#123;&quot;alertThreshold&quot;:true&#125;,&quot;percentage&quot;:false,&quot;pluginVersion&quot;:&quot;7.4.3&quot;,&quot;pointradius&quot;:2,&quot;points&quot;:false,&quot;renderer&quot;:&quot;flot&quot;,&quot;seriesOverrides&quot;:[],&quot;spaceLength&quot;:10,&quot;stack&quot;:false,&quot;steppedLine&quot;:false,&quot;targets&quot;:[&#123;&quot;expr&quot;:&quot; sum by (OriginStatus,ServiceName) (count_over_time(&#123;filename=\&quot;/var/log/access.log\&quot;&#125; |~ \&quot;RequestProtocol\&quot; | json | OriginStatus &gt;= 400 |__error__=\&quot;\&quot;[$__interval]))&quot;,&quot;legendFormat&quot;:&quot; &#123;&#123;ServiceName&#125;&#125; / &#123;&#123;OriginStatus&#125;&#125; &quot;,&quot;refId&quot;:&quot;A&quot;&#125;],&quot;thresholds&quot;:[],&quot;timeFrom&quot;:&quot;3h&quot;,&quot;timeRegions&quot;:[],&quot;timeShift&quot;:null,&quot;title&quot;:&quot; 4/5xx  Services&quot;,&quot;tooltip&quot;:&#123;&quot;shared&quot;:true,&quot;sort&quot;:0,&quot;value_type&quot;:&quot;individual&quot;&#125;,&quot;transparent&quot;:true,&quot;type&quot;:&quot;graph&quot;,&quot;xaxis&quot;:&#123;&quot;buckets&quot;:null,&quot;mode&quot;:&quot;time&quot;,&quot;name&quot;:null,&quot;show&quot;:false,&quot;values&quot;:[]&#125;,&quot;yaxes&quot;:[&#123;&quot;$$hashKey&quot;:&quot;object:405&quot;,&quot;decimals&quot;:0,&quot;format&quot;:&quot;none&quot;,&quot;label&quot;:null,&quot;logBase&quot;:1,&quot;max&quot;:null,&quot;min&quot;:&quot;0&quot;,&quot;show&quot;:true&#125;,&#123;&quot;$$hashKey&quot;:&quot;object:406&quot;,&quot;format&quot;:&quot;short&quot;,&quot;label&quot;:null,&quot;logBase&quot;:1,&quot;max&quot;:null,&quot;min&quot;:null,&quot;show&quot;:false&#125;],&quot;yaxis&quot;:&#123;&quot;align&quot;:false,&quot;alignLevel&quot;:null&#125;&#125;,&#123;&quot;datasource&quot;:&quot;Loki&quot;,&quot;description&quot;:&quot;&quot;,&quot;fieldConfig&quot;:&#123;&quot;defaults&quot;:&#123;&quot;custom&quot;:&#123;&#125;,&quot;mappings&quot;:[],&quot;thresholds&quot;:&#123;&quot;mode&quot;:&quot;absolute&quot;,&quot;steps&quot;:[&#123;&quot;color&quot;:&quot;purple&quot;,&quot;value&quot;:null&#125;]&#125;&#125;,&quot;overrides&quot;:[]&#125;,&quot;gridPos&quot;:&#123;&quot;h&quot;:4,&quot;w&quot;:6,&quot;x&quot;:0,&quot;y&quot;:6&#125;,&quot;id&quot;:22,&quot;interval&quot;:&quot;5m&quot;,&quot;options&quot;:&#123;&quot;colorMode&quot;:&quot;background&quot;,&quot;graphMode&quot;:&quot;none&quot;,&quot;justifyMode&quot;:&quot;auto&quot;,&quot;orientation&quot;:&quot;auto&quot;,&quot;reduceOptions&quot;:&#123;&quot;calcs&quot;:[&quot;mean&quot;],&quot;fields&quot;:&quot;&quot;,&quot;values&quot;:false&#125;,&quot;text&quot;:&#123;&#125;,&quot;textMode&quot;:&quot;value&quot;&#125;,&quot;pluginVersion&quot;:&quot;7.4.3&quot;,&quot;targets&quot;:[&#123;&quot;expr&quot;:&quot;count(sum by (ClientHost) (count_over_time(&#123;filename=\&quot;/var/log/access.log\&quot;&#125;|= \&quot;RequestProtocol\&quot; | json |  __error__=\&quot;\&quot; [$__interval])))&quot;,&quot;legendFormat&quot;:&quot;&quot;,&quot;refId&quot;:&quot;A&quot;&#125;],&quot;timeFrom&quot;:&quot;5m&quot;,&quot;timeShift&quot;:null,&quot;title&quot;:&quot;Users right now&quot;,&quot;transformations&quot;:[],&quot;transparent&quot;:true,&quot;type&quot;:&quot;stat&quot;&#125;,&#123;&quot;datasource&quot;:&quot;Loki&quot;,&quot;description&quot;:&quot;&quot;,&quot;fieldConfig&quot;:&#123;&quot;defaults&quot;:&#123;&quot;custom&quot;:&#123;&#125;,&quot;mappings&quot;:[],&quot;thresholds&quot;:&#123;&quot;mode&quot;:&quot;absolute&quot;,&quot;steps&quot;:[&#123;&quot;color&quot;:&quot;purple&quot;,&quot;value&quot;:null&#125;]&#125;,&quot;unit&quot;:&quot;decbytes&quot;&#125;,&quot;overrides&quot;:[]&#125;,&quot;gridPos&quot;:&#123;&quot;h&quot;:4,&quot;w&quot;:8,&quot;x&quot;:15,&quot;y&quot;:6&#125;,&quot;id&quot;:8,&quot;interval&quot;:&quot;1m&quot;,&quot;options&quot;:&#123;&quot;colorMode&quot;:&quot;background&quot;,&quot;graphMode&quot;:&quot;none&quot;,&quot;justifyMode&quot;:&quot;center&quot;,&quot;orientation&quot;:&quot;auto&quot;,&quot;reduceOptions&quot;:&#123;&quot;calcs&quot;:[&quot;sum&quot;],&quot;fields&quot;:&quot;&quot;,&quot;values&quot;:false&#125;,&quot;text&quot;:&#123;&#125;,&quot;textMode&quot;:&quot;value&quot;&#125;,&quot;pluginVersion&quot;:&quot;7.4.3&quot;,&quot;targets&quot;:[&#123;&quot;expr&quot;:&quot;sum_over_time(&#123;filename=\&quot;/var/log/access.log\&quot;&#125;|= \&quot;RequestProtocol\&quot; | json | OriginStatus=200 | unwrap DownstreamContentSize |  __error__=\&quot;\&quot; [$__interval])&quot;,&quot;legendFormat&quot;:&quot;Bytes sent&quot;,&quot;refId&quot;:&quot;A&quot;&#125;],&quot;timeFrom&quot;:&quot;5m&quot;,&quot;timeShift&quot;:null,&quot;title&quot;:&quot;Total Bytes Sent&quot;,&quot;transformations&quot;:[&#123;&quot;id&quot;:&quot;reduce&quot;,&quot;options&quot;:&#123;&quot;reducers&quot;:[&quot;sum&quot;]&#125;&#125;,&#123;&quot;id&quot;:&quot;organize&quot;,&quot;options&quot;:&#123;&quot;excludeByName&quot;:&#123;&#125;,&quot;indexByName&quot;:&#123;&#125;,&quot;renameByName&quot;:&#123;&quot;Total&quot;:&quot;Bytes Sent&quot;&#125;&#125;&#125;],&quot;transparent&quot;:true,&quot;type&quot;:&quot;stat&quot;&#125;,&#123;&quot;aliasColors&quot;:&#123;&#125;,&quot;breakPoint&quot;:&quot;50%&quot;,&quot;cacheTimeout&quot;:null,&quot;combine&quot;:&#123;&quot;label&quot;:&quot;Others&quot;,&quot;threshold&quot;:0&#125;,&quot;datasource&quot;:&quot;Loki&quot;,&quot;description&quot;:&quot;&quot;,&quot;fieldConfig&quot;:&#123;&quot;defaults&quot;:&#123;&quot;custom&quot;:&#123;&#125;,&quot;thresholds&quot;:&#123;&quot;mode&quot;:&quot;absolute&quot;,&quot;steps&quot;:[]&#125;&#125;,&quot;overrides&quot;:[]&#125;,&quot;fontSize&quot;:&quot;80%&quot;,&quot;format&quot;:&quot;short&quot;,&quot;gridPos&quot;:&#123;&quot;h&quot;:8,&quot;w&quot;:8,&quot;x&quot;:0,&quot;y&quot;:10&#125;,&quot;id&quot;:33,&quot;interval&quot;:&quot;5m&quot;,&quot;legend&quot;:&#123;&quot;percentage&quot;:true,&quot;show&quot;:true,&quot;values&quot;:true&#125;,&quot;legendType&quot;:&quot;Right side&quot;,&quot;links&quot;:[],&quot;maxDataPoints&quot;:3,&quot;nullPointMode&quot;:&quot;connected&quot;,&quot;pieType&quot;:&quot;pie&quot;,&quot;pluginVersion&quot;:&quot;7.3.4&quot;,&quot;strokeWidth&quot;:1,&quot;targets&quot;:[&#123;&quot;expr&quot;:&quot;sum by (RouterName) (count_over_time(&#123;filename=\&quot;/var/log/access.log\&quot;&#125;|= \&quot;RequestProtocol\&quot; | json |  __error__=\&quot;\&quot; [$__interval]))&quot;,&quot;legendFormat&quot;:&quot;&#123;&#123;RouterName&#125;&#125;&quot;,&quot;refId&quot;:&quot;A&quot;&#125;],&quot;timeFrom&quot;:&quot;1h&quot;,&quot;timeShift&quot;:null,&quot;title&quot;:&quot;Requests Route&quot;,&quot;transformations&quot;:[],&quot;transparent&quot;:true,&quot;type&quot;:&quot;grafana-piechart-panel&quot;,&quot;valueName&quot;:&quot;current&quot;&#125;,&#123;&quot;datasource&quot;:&quot;Loki&quot;,&quot;fieldConfig&quot;:&#123;&quot;defaults&quot;:&#123;&quot;custom&quot;:&#123;&#125;&#125;,&quot;overrides&quot;:[]&#125;,&quot;gridPos&quot;:&#123;&quot;h&quot;:8,&quot;w&quot;:16,&quot;x&quot;:8,&quot;y&quot;:10&#125;,&quot;id&quot;:11,&quot;interval&quot;:&quot;&quot;,&quot;options&quot;:&#123;&quot;showLabels&quot;:false,&quot;showTime&quot;:true,&quot;sortOrder&quot;:&quot;Descending&quot;,&quot;wrapLogMessage&quot;:false&#125;,&quot;targets&quot;:[&#123;&quot;expr&quot;:&quot;&#123;filename=\&quot;/var/log/access.log\&quot;&#125; |= \&quot;RequestProtocol\&quot;| json  | line_format \&quot;Status:&#123;&#123;.OriginStatus&#125;&#125; Client From &#123;&#123;.ClientAddr&#125;&#125; &#123;&#123;.RequestMethod&#125;&#125; &#123;&#123;.RequestAddr&#125;&#125;&#123;&#123;.RequestPath&#125;&#125; Route To &#123;&#123;.ServiceAddr&#125;&#125;\&quot;&quot;,&quot;legendFormat&quot;:&quot;&quot;,&quot;refId&quot;:&quot;A&quot;&#125;],&quot;timeFrom&quot;:&quot;5m&quot;,&quot;timeShift&quot;:null,&quot;title&quot;:&quot;Logs&quot;,&quot;transparent&quot;:true,&quot;type&quot;:&quot;logs&quot;&#125;,&#123;&quot;aliasColors&quot;:&#123;&quot;95th percentile&quot;:&quot;blue&quot;,&quot;max latency&quot;:&quot;super-light-blue&quot;&#125;,&quot;bars&quot;:false,&quot;dashLength&quot;:10,&quot;dashes&quot;:false,&quot;datasource&quot;:&quot;Loki&quot;,&quot;description&quot;:&quot;&quot;,&quot;fieldConfig&quot;:&#123;&quot;defaults&quot;:&#123;&quot;custom&quot;:&#123;&#125;,&quot;unit&quot;:&quot;ns&quot;&#125;,&quot;overrides&quot;:[]&#125;,&quot;fill&quot;:5,&quot;fillGradient&quot;:9,&quot;gridPos&quot;:&#123;&quot;h&quot;:9,&quot;w&quot;:8,&quot;x&quot;:0,&quot;y&quot;:18&#125;,&quot;hiddenSeries&quot;:false,&quot;id&quot;:16,&quot;interval&quot;:&quot;30s&quot;,&quot;legend&quot;:&#123;&quot;alignAsTable&quot;:false,&quot;avg&quot;:false,&quot;current&quot;:false,&quot;max&quot;:true,&quot;min&quot;:false,&quot;rightSide&quot;:false,&quot;show&quot;:true,&quot;total&quot;:false,&quot;values&quot;:true&#125;,&quot;lines&quot;:true,&quot;linewidth&quot;:1,&quot;nullPointMode&quot;:&quot;null&quot;,&quot;options&quot;:&#123;&quot;alertThreshold&quot;:true&#125;,&quot;percentage&quot;:false,&quot;pluginVersion&quot;:&quot;7.4.3&quot;,&quot;pointradius&quot;:2,&quot;points&quot;:false,&quot;renderer&quot;:&quot;flot&quot;,&quot;seriesOverrides&quot;:[&#123;&quot;$$hashKey&quot;:&quot;object:232&quot;,&quot;alias&quot;:&quot;max latency&quot;,&quot;dashes&quot;:true,&quot;fillGradient&quot;:3&#125;],&quot;spaceLength&quot;:10,&quot;stack&quot;:false,&quot;steppedLine&quot;:false,&quot;targets&quot;:[&#123;&quot;expr&quot;:&quot;quantile_over_time(0.95,&#123;filename=\&quot;/var/log/access.log\&quot;&#125; |= \&quot;RequestProtocol\&quot;| json | unwrap Duration |  __error__=\&quot;\&quot;  [$__interval]) by (ServiceName)&quot;,&quot;hide&quot;:false,&quot;legendFormat&quot;:&quot; &#123;&#123; ServiceName &#125;&#125;&quot;,&quot;refId&quot;:&quot;C&quot;&#125;],&quot;thresholds&quot;:[&#123;&quot;$$hashKey&quot;:&quot;object:168&quot;,&quot;colorMode&quot;:&quot;critical&quot;,&quot;fill&quot;:true,&quot;line&quot;:true,&quot;op&quot;:&quot;gt&quot;,&quot;value&quot;:0.3,&quot;yaxis&quot;:&quot;left&quot;&#125;],&quot;timeFrom&quot;:null,&quot;timeRegions&quot;:[],&quot;timeShift&quot;:null,&quot;title&quot;:&quot;95th percentile of Request Time&quot;,&quot;tooltip&quot;:&#123;&quot;shared&quot;:true,&quot;sort&quot;:0,&quot;value_type&quot;:&quot;individual&quot;&#125;,&quot;transparent&quot;:true,&quot;type&quot;:&quot;graph&quot;,&quot;xaxis&quot;:&#123;&quot;buckets&quot;:null,&quot;mode&quot;:&quot;time&quot;,&quot;name&quot;:null,&quot;show&quot;:true,&quot;values&quot;:[]&#125;,&quot;yaxes&quot;:[&#123;&quot;$$hashKey&quot;:&quot;object:178&quot;,&quot;format&quot;:&quot;ns&quot;,&quot;label&quot;:null,&quot;logBase&quot;:1,&quot;max&quot;:null,&quot;min&quot;:null,&quot;show&quot;:true&#125;,&#123;&quot;$$hashKey&quot;:&quot;object:179&quot;,&quot;format&quot;:&quot;short&quot;,&quot;label&quot;:null,&quot;logBase&quot;:1,&quot;max&quot;:null,&quot;min&quot;:null,&quot;show&quot;:false&#125;],&quot;yaxis&quot;:&#123;&quot;align&quot;:false,&quot;alignLevel&quot;:null&#125;&#125;,&#123;&quot;aliasColors&quot;:&#123;&quot;95th percentile&quot;:&quot;blue&quot;,&quot;max latency&quot;:&quot;super-light-blue&quot;&#125;,&quot;bars&quot;:false,&quot;dashLength&quot;:10,&quot;dashes&quot;:false,&quot;datasource&quot;:&quot;Loki&quot;,&quot;description&quot;:&quot;&quot;,&quot;fieldConfig&quot;:&#123;&quot;defaults&quot;:&#123;&quot;custom&quot;:&#123;&#125;,&quot;unit&quot;:&quot;ns&quot;&#125;,&quot;overrides&quot;:[]&#125;,&quot;fill&quot;:5,&quot;fillGradient&quot;:9,&quot;gridPos&quot;:&#123;&quot;h&quot;:9,&quot;w&quot;:8,&quot;x&quot;:8,&quot;y&quot;:18&#125;,&quot;hiddenSeries&quot;:false,&quot;id&quot;:34,&quot;interval&quot;:&quot;30s&quot;,&quot;legend&quot;:&#123;&quot;alignAsTable&quot;:false,&quot;avg&quot;:false,&quot;current&quot;:false,&quot;max&quot;:false,&quot;min&quot;:false,&quot;rightSide&quot;:false,&quot;show&quot;:true,&quot;total&quot;:false,&quot;values&quot;:false&#125;,&quot;lines&quot;:true,&quot;linewidth&quot;:1,&quot;nullPointMode&quot;:&quot;null&quot;,&quot;options&quot;:&#123;&quot;alertThreshold&quot;:true&#125;,&quot;percentage&quot;:false,&quot;pluginVersion&quot;:&quot;7.4.3&quot;,&quot;pointradius&quot;:2,&quot;points&quot;:false,&quot;renderer&quot;:&quot;flot&quot;,&quot;seriesOverrides&quot;:[&#123;&quot;$$hashKey&quot;:&quot;object:232&quot;,&quot;alias&quot;:&quot;max latency&quot;,&quot;dashes&quot;:true,&quot;fillGradient&quot;:3&#125;],&quot;spaceLength&quot;:10,&quot;stack&quot;:false,&quot;steppedLine&quot;:false,&quot;targets&quot;:[&#123;&quot;expr&quot;:&quot;max by (ServiceName) (max_over_time(&#123;filename=\&quot;/var/log/access.log\&quot;&#125; |= \&quot;RequestProtocol\&quot; |json | unwrap Duration |  __error__=\&quot;\&quot;  [$__interval]))&quot;,&quot;hide&quot;:false,&quot;legendFormat&quot;:&quot;&#123;&#123; ServiceName&#125;&#125;&quot;,&quot;refId&quot;:&quot;D&quot;&#125;],&quot;thresholds&quot;:[&#123;&quot;$$hashKey&quot;:&quot;object:168&quot;,&quot;colorMode&quot;:&quot;critical&quot;,&quot;fill&quot;:true,&quot;line&quot;:true,&quot;op&quot;:&quot;gt&quot;,&quot;value&quot;:0.3,&quot;yaxis&quot;:&quot;left&quot;&#125;],&quot;timeFrom&quot;:null,&quot;timeRegions&quot;:[],&quot;timeShift&quot;:null,&quot;title&quot;:&quot;Max Age of Request Time&quot;,&quot;tooltip&quot;:&#123;&quot;shared&quot;:true,&quot;sort&quot;:0,&quot;value_type&quot;:&quot;individual&quot;&#125;,&quot;transparent&quot;:true,&quot;type&quot;:&quot;graph&quot;,&quot;xaxis&quot;:&#123;&quot;buckets&quot;:null,&quot;mode&quot;:&quot;time&quot;,&quot;name&quot;:null,&quot;show&quot;:true,&quot;values&quot;:[]&#125;,&quot;yaxes&quot;:[&#123;&quot;$$hashKey&quot;:&quot;object:178&quot;,&quot;format&quot;:&quot;ns&quot;,&quot;label&quot;:null,&quot;logBase&quot;:1,&quot;max&quot;:null,&quot;min&quot;:null,&quot;show&quot;:true&#125;,&#123;&quot;$$hashKey&quot;:&quot;object:179&quot;,&quot;format&quot;:&quot;short&quot;,&quot;label&quot;:null,&quot;logBase&quot;:1,&quot;max&quot;:null,&quot;min&quot;:null,&quot;show&quot;:false&#125;],&quot;yaxis&quot;:&#123;&quot;align&quot;:false,&quot;alignLevel&quot;:null&#125;&#125;,&#123;&quot;aliasColors&quot;:&#123;&quot;95th percentile&quot;:&quot;blue&quot;,&quot;max latency&quot;:&quot;super-light-blue&quot;&#125;,&quot;bars&quot;:false,&quot;dashLength&quot;:10,&quot;dashes&quot;:false,&quot;datasource&quot;:&quot;Loki&quot;,&quot;description&quot;:&quot;&quot;,&quot;fieldConfig&quot;:&#123;&quot;defaults&quot;:&#123;&quot;custom&quot;:&#123;&#125;,&quot;unit&quot;:&quot;decbytes&quot;&#125;,&quot;overrides&quot;:[]&#125;,&quot;fill&quot;:5,&quot;fillGradient&quot;:9,&quot;gridPos&quot;:&#123;&quot;h&quot;:9,&quot;w&quot;:8,&quot;x&quot;:16,&quot;y&quot;:18&#125;,&quot;hiddenSeries&quot;:false,&quot;id&quot;:35,&quot;interval&quot;:&quot;30s&quot;,&quot;legend&quot;:&#123;&quot;alignAsTable&quot;:false,&quot;avg&quot;:false,&quot;current&quot;:false,&quot;max&quot;:false,&quot;min&quot;:false,&quot;rightSide&quot;:false,&quot;show&quot;:true,&quot;total&quot;:false,&quot;values&quot;:false&#125;,&quot;lines&quot;:true,&quot;linewidth&quot;:1,&quot;nullPointMode&quot;:&quot;null&quot;,&quot;options&quot;:&#123;&quot;alertThreshold&quot;:true&#125;,&quot;percentage&quot;:false,&quot;pluginVersion&quot;:&quot;7.4.3&quot;,&quot;pointradius&quot;:2,&quot;points&quot;:false,&quot;renderer&quot;:&quot;flot&quot;,&quot;seriesOverrides&quot;:[&#123;&quot;$$hashKey&quot;:&quot;object:232&quot;,&quot;alias&quot;:&quot;max latency&quot;,&quot;dashes&quot;:true,&quot;fillGradient&quot;:3&#125;],&quot;spaceLength&quot;:10,&quot;stack&quot;:false,&quot;steppedLine&quot;:false,&quot;targets&quot;:[&#123;&quot;expr&quot;:&quot;sum by (ServiceName) (sum_over_time(&#123;filename=\&quot;/var/log/access.log\&quot;&#125; |= \&quot;RequestProtocol\&quot; |json | unwrap RequestContentSize |  __error__=\&quot;\&quot;  [$__interval]))&quot;,&quot;hide&quot;:false,&quot;legendFormat&quot;:&quot;&#123;&#123; ServiceName&#125;&#125;&quot;,&quot;refId&quot;:&quot;D&quot;&#125;],&quot;thresholds&quot;:[&#123;&quot;$$hashKey&quot;:&quot;object:168&quot;,&quot;colorMode&quot;:&quot;critical&quot;,&quot;fill&quot;:true,&quot;line&quot;:true,&quot;op&quot;:&quot;gt&quot;,&quot;value&quot;:0.3,&quot;yaxis&quot;:&quot;left&quot;&#125;],&quot;timeFrom&quot;:null,&quot;timeRegions&quot;:[],&quot;timeShift&quot;:null,&quot;title&quot;:&quot;Requests Size&quot;,&quot;tooltip&quot;:&#123;&quot;shared&quot;:true,&quot;sort&quot;:0,&quot;value_type&quot;:&quot;individual&quot;&#125;,&quot;transparent&quot;:true,&quot;type&quot;:&quot;graph&quot;,&quot;xaxis&quot;:&#123;&quot;buckets&quot;:null,&quot;mode&quot;:&quot;time&quot;,&quot;name&quot;:null,&quot;show&quot;:true,&quot;values&quot;:[]&#125;,&quot;yaxes&quot;:[&#123;&quot;$$hashKey&quot;:&quot;object:178&quot;,&quot;format&quot;:&quot;decbytes&quot;,&quot;label&quot;:null,&quot;logBase&quot;:1,&quot;max&quot;:null,&quot;min&quot;:null,&quot;show&quot;:true&#125;,&#123;&quot;$$hashKey&quot;:&quot;object:179&quot;,&quot;format&quot;:&quot;short&quot;,&quot;label&quot;:null,&quot;logBase&quot;:1,&quot;max&quot;:null,&quot;min&quot;:null,&quot;show&quot;:false&#125;],&quot;yaxis&quot;:&#123;&quot;align&quot;:false,&quot;alignLevel&quot;:null&#125;&#125;],&quot;refresh&quot;:false,&quot;schemaVersion&quot;:27,&quot;style&quot;:&quot;dark&quot;,&quot;tags&quot;:[],&quot;templating&quot;:&#123;&quot;list&quot;:[]&#125;,&quot;time&quot;:&#123;&quot;from&quot;:&quot;now-1h&quot;,&quot;to&quot;:&quot;now&quot;&#125;,&quot;timepicker&quot;:&#123;&quot;refresh_intervals&quot;:[&quot;10s&quot;,&quot;30s&quot;,&quot;1m&quot;,&quot;5m&quot;,&quot;15m&quot;,&quot;30m&quot;,&quot;1h&quot;,&quot;2h&quot;,&quot;1d&quot;]&#125;,&quot;timezone&quot;:&quot;&quot;,&quot;title&quot;:&quot;Traefik Via Loki&quot;,&quot;uid&quot;:&quot;fJarCeaGk&quot;,&quot;version&quot;:2&#125;</span><br></pre>
+
+<p>到这里，两个大盘就完美展示了，具体Grafana如何使用可自行查阅资料。</p>
+<p>值得注意的是，后续增加容器服务，只要注册在Traefik，就会自动联动到监控系统，无需任何二次配置，实现简单，便捷，统一管理。</p>
+<p>本文所涉及的文件均在此处可找到：<a target="_blank" rel="noopener" href="https://github.com/yfgeek/traefik-docker-compose">https://github.com/yfgeek/traefik-docker-compose</a></p>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  
+  <div class="nav-item-next">
+    <a href="/2021/03/10/Traefik 2 群晖硬核指南/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">Traefik 2 群晖硬核指南 </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-text">背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%88%E6%9E%9C%E5%9B%BE"><span class="toc-text">效果图</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Traefik"><span class="toc-text">Traefik</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%90%AD%E5%BB%BA%E7%9B%91%E6%8E%A7%E7%B3%BB%E7%BB%9F"><span class="toc-text">搭建监控系统</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Grafana"><span class="toc-text">Grafana</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Prometheus"><span class="toc-text">Prometheus</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Promtail"><span class="toc-text">Promtail</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Loki"><span class="toc-text">Loki</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%80%E6%90%9E"><span class="toc-text">开搞</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%97%A5%E5%BF%97%E6%A3%80%E7%B4%A2"><span class="toc-text">日志检索</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Traefik-%E5%A4%A7%E7%9B%98"><span class="toc-text">Traefik 大盘</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Loki-%E5%A4%A7%E7%9B%98"><span class="toc-text">Loki 大盘</span></a></li></ol></li></ol></li></ol>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>72</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>26</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>26</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-text">背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%88%E6%9E%9C%E5%9B%BE"><span class="toc-text">效果图</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Traefik"><span class="toc-text">Traefik</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%90%AD%E5%BB%BA%E7%9B%91%E6%8E%A7%E7%B3%BB%E7%BB%9F"><span class="toc-text">搭建监控系统</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Grafana"><span class="toc-text">Grafana</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Prometheus"><span class="toc-text">Prometheus</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Promtail"><span class="toc-text">Promtail</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Loki"><span class="toc-text">Loki</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%80%E6%90%9E"><span class="toc-text">开搞</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%97%A5%E5%BF%97%E6%A3%80%E7%B4%A2"><span class="toc-text">日志检索</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Traefik-%E5%A4%A7%E7%9B%98"><span class="toc-text">Traefik 大盘</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Loki-%E5%A4%A7%E7%9B%98"><span class="toc-text">Loki 大盘</span></a></li></ol></li></ol></li></ol>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/traefik/" title="traefik"><div class="tags-list-item">traefik</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+    <a href="/tags/RaspberryPi/" title="RaspberryPi"><div class="tags-list-item">RaspberryPi</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-text">背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%88%E6%9E%9C%E5%9B%BE"><span class="toc-text">效果图</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Traefik"><span class="toc-text">Traefik</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%90%AD%E5%BB%BA%E7%9B%91%E6%8E%A7%E7%B3%BB%E7%BB%9F"><span class="toc-text">搭建监控系统</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Grafana"><span class="toc-text">Grafana</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Prometheus"><span class="toc-text">Prometheus</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Promtail"><span class="toc-text">Promtail</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Loki"><span class="toc-text">Loki</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%80%E6%90%9E"><span class="toc-text">开搞</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%97%A5%E5%BF%97%E6%A3%80%E7%B4%A2"><span class="toc-text">日志检索</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Traefik-%E5%A4%A7%E7%9B%98"><span class="toc-text">Traefik 大盘</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Loki-%E5%A4%A7%E7%9B%98"><span class="toc-text">Loki 大盘</span></a></li></ol></li></ol></li></ol>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-19</div>
+        <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/"><div class="recent-posts-item-content">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-10</div>
+        <a href="/2021/03/10/Traefik 2 群晖硬核指南/"><div class="recent-posts-item-content">Traefik 2 群晖硬核指南</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-02-26</div>
+        <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Big Sur 黑苹果安装教程</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2024
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>

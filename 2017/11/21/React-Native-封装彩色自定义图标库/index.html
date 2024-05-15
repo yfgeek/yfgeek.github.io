@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>React Native 封装彩色自定义图标库</title>
+  
+  
+  <meta property="og:title" content="React Native 封装彩色自定义图标库">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2017/11/21/React-Native-%E5%B0%81%E8%A3%85%E5%BD%A9%E8%89%B2%E8%87%AA%E5%AE%9A%E4%B9%89%E5%9B%BE%E6%A0%87%E5%BA%93/index.html">
+  
+  
+  <meta property="og:img" content="/content/images/blog/me.jpg">
+  
+  
+  <meta property="og:img" content="Thinking as a Geek">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2017-11-21">
+  <meta property="og:article:modified_time" content="2024-05-15">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="React-Native">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      React Native 封装彩色自定义图标库
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2017-11-21T05:35:05.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2017-11-21</span>
+    </time>
+    
+    <span class="dot"></span>
+    
+    <a href="/categories/React-Native/" class="post-meta-link">React-Native</a>
+    
+    
+    
+    <span class="dot"></span>
+    <span>2.6k 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/React-Native/" class="post-meta-link">React-Native</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <h1 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h1><p>本文接上篇<a target="_blank" rel="noopener" href="http://blog.yfgeek.com/2017/11/19/react-native-icon/">React Native 添加自定义图标库</a>，上篇介绍的很基础，但是有没有发现一个问题，通过这种<code>react-native-vector-icons</code>方式封装下来的图标，都只有黑白图标，颜色需要自己<strong>手动设置</strong>，但是对于我这种彩色绚丽的图标，手动设置？不存在的…</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/react-icon/1.png" class="lozad post-image"src="/content/images/react-icon/1.png"></p>
+<p>那么本文就在上文的基础上讲讲，我是如何办到的自动彩色图标。</p>
+<p>答题思路是创建一个色彩配置文件，等到加载的时候，按照标签去加载。</p>
+<p>我Google了一圈，都找不到怎么让他自动加载色彩，可能是我搜索的姿势不对吧。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/react-icon/2-0.png" class="lozad post-image"src="/content/images/react-icon/2-0.png"></p>
+<h1 id="文件处理"><a href="#文件处理" class="headerlink" title="文件处理"></a>文件处理</h1><p>首先，我们在<code>IcoMoon</code>先上传并下载一份黑色底色的图标文件，再上传并下载一份彩色底色图标文件。</p>
+<p>我们提取出黑色底色图标文件中的<code>icomoon.ttf</code>替换掉Xcode中的文件。</p>
+<p>与此同时，找到下载的彩色压缩包中找到<code>selection.json</code>这个神奇的文件，如果你上传的是彩色图标，实际上，里面内置了所有图标的色彩。</p>
+<p>短暂的例子如下：</p>
+<pre class="highlight"><span class="line">&#123;</span><br><span class="line">  <span class="string">&quot;IcoMoonType&quot;</span>: <span class="string">&quot;selection&quot;</span>,</span><br><span class="line">  <span class="string">&quot;icons&quot;</span>: [</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="string">&quot;icon&quot;</span>: &#123;</span><br><span class="line">        <span class="string">&quot;paths&quot;</span>: [</span><br><span class="line">          <span class="string">&quot;M1024 512c0 282.77-229.23 512-512 512s-512-229.23-512-512c0-282.77 229.23-512 512-512s512 229.23 512 512z&quot;</span>,</span><br><span class="line">          <span class="string">&quot;M495.864 864c-8.635-0.904-17.283-1.694-25.902-2.735-46.907-5.658-90.865-20.248-131.905-43.628-0.617-0.351-1.173-0.807-2.359-1.631 70.607-52.759 140.878-105.267 211.541-158.068 7.173 6.99 14.228 13.852 21.267 20.732 11.824 11.554 23.75 23.006 35.372 34.761 2.857 2.888 4.938 2.843 8.321 1.13 35.662-18.047 64.813-43.452 87.298-76.484 1.076-1.581 2.141-3.168 3.409-5.046 1.007 1.154 1.922 2.078 2.695 3.109 24.557 32.675 49.065 65.386 73.707 97.999 2.131 2.82 1.861 4.498-0.394 7.058-57.072 64.811-127.961 104.761-213.416 118.423-10.764 1.721-21.699 2.371-32.551 3.556-1.443 0.158-2.861 0.543-4.29 0.823h-32.795zM526.886 160c5.987 0.602 11.972 1.234 17.963 1.801 50.406 4.768 97.579 19.719 141.532 44.82 0.618 0.352 1.171 0.814 2.239 1.567-71.758 51.465-143.179 102.689-215 154.198-2.819-2.673-5.592-5.243-8.299-7.879-15.124-14.723-30.288-29.405-45.288-44.253-2.404-2.379-4.231-2.644-7.231-1.144-36.318 18.15-65.87 43.969-88.618 77.568-0.824 1.217-1.649 2.433-3.243 4.784-26.391-35.161-52.444-69.873-78.959-105.2 7.959-8.447 15.318-16.848 23.29-24.622 51.948-50.658 113.581-82.88 185.050-95.845 13.759-2.496 27.819-3.324 41.737-4.951 1.575-0.184 3.129-0.559 4.692-0.845h30.136zM206.697 337.1c53.619 70.288 106.656 139.809 159.841 209.528-10.847 11.122-21.55 22.105-32.261 33.079-8.040 8.239-16.003 16.557-24.194 24.644-2.32 2.291-2.398 4.063-0.994 6.878 18.102 36.324 43.942 65.848 77.544 88.614 1.099 0.745 2.21 1.473 3.287 2.248 0.204 0.146 0.275 0.477 0.859 1.567-34.561 25.915-69.228 51.909-104.355 78.248-62.384-53.699-102.894-119.92-119.15-200.203-17.409-85.972-3.298-167.187 39.424-244.603zM660.291 476.931c9.953-10.34 19.655-20.426 29.366-30.502 8.192-8.501 16.277-17.112 24.668-25.413 2.611-2.584 2.571-4.525 1.042-7.607-18.248-36.766-44.326-66.643-78.406-89.551-1.189-0.8-2.338-1.656-4.339-3.078 35.118-26.354 69.777-52.362 104.912-78.728 59.438 50.901 98.889 113.583 117.002 189.265 22.608 94.462 2.47 187.911-36.701 253.699-52.442-69.266-104.8-138.42-157.545-208.086z&quot;</span></span><br><span class="line">        ],</span><br><span class="line">        <span class="string">&quot;attrs&quot;</span>: [</span><br><span class="line">          &#123;</span><br><span class="line">            <span class="string">&quot;fill&quot;</span>: <span class="string">&quot;rgb(48, 44, 44)&quot;</span></span><br><span class="line">          &#125;,</span><br><span class="line">          &#123;</span><br><span class="line">            <span class="string">&quot;fill&quot;</span>: <span class="string">&quot;rgb(255, 255, 255)&quot;</span></span><br><span class="line">          &#125;</span><br><span class="line">        ],</span><br><span class="line">        <span class="string">&quot;isMulticolor&quot;</span>: <span class="literal">true</span>,</span><br><span class="line">        <span class="string">&quot;isMulticolor2&quot;</span>: <span class="literal">false</span>,</span><br><span class="line">        <span class="string">&quot;grid&quot;</span>: <span class="number">0</span>,</span><br><span class="line">        <span class="string">&quot;tags&quot;</span>: [</span><br><span class="line">          <span class="string">&quot;x&quot;</span></span><br><span class="line">        ]</span><br><span class="line">      &#125;,</span><br><span class="line">      <span class="string">&quot;attrs&quot;</span>: [</span><br><span class="line">        &#123;</span><br><span class="line">          <span class="string">&quot;fill&quot;</span>: <span class="string">&quot;rgb(48, 44, 44)&quot;</span></span><br><span class="line">        &#125;,</span><br><span class="line">        &#123;</span><br><span class="line">          <span class="string">&quot;fill&quot;</span>: <span class="string">&quot;rgb(255, 255, 255)&quot;</span></span><br><span class="line">        &#125;</span><br><span class="line">      ],</span><br><span class="line">      <span class="string">&quot;properties&quot;</span>: &#123;</span><br><span class="line">        <span class="string">&quot;order&quot;</span>: <span class="number">3</span>,</span><br><span class="line">        <span class="string">&quot;id&quot;</span>: <span class="number">66</span>,</span><br><span class="line">        <span class="string">&quot;name&quot;</span>: <span class="string">&quot;x&quot;</span>,</span><br><span class="line">        <span class="string">&quot;prevSize&quot;</span>: <span class="number">32</span>,</span><br><span class="line">        <span class="string">&quot;code&quot;</span>: <span class="number">59648</span>,</span><br><span class="line">        <span class="string">&quot;codes&quot;</span>: [</span><br><span class="line">          <span class="number">59648</span>,</span><br><span class="line">          <span class="number">59649</span></span><br><span class="line">        ]</span><br><span class="line">      &#125;,</span><br><span class="line">      <span class="string">&quot;setIdx&quot;</span>: <span class="number">0</span>,</span><br><span class="line">      <span class="string">&quot;setId&quot;</span>: <span class="number">2</span>,</span><br><span class="line">      <span class="string">&quot;iconIdx&quot;</span>: <span class="number">0</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;...&#125;,</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre>
+
+<p>我们分析一下这个文件，不难看出，icons下包含一个数组，每个数组代表每一个图标，每一个数组下都包含属性<code>tags[0]</code>,<code>attrs[0].fill</code>分别代表对应的标签及色彩。</p>
+<p>这个时候，我们需要构建一个自己的色彩配置文件，把刚刚的有用的信息提取出来，具体的按照自己需求，定义标签名字和颜色。</p>
+<pre class="highlight"><span class="line"><span class="keyword">let</span> data = <span class="built_in">require</span>(<span class="string">&#x27;./selection.json&#x27;</span>);</span><br><span class="line"><span class="keyword">let</span> arr = [];</span><br><span class="line">data.<span class="property">icons</span>.<span class="title function_">forEach</span>(<span class="function">(<span class="params">item</span>)=&gt;</span>&#123;</span><br><span class="line">	arr.<span class="title function_">push</span>(</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="string">&#x27;cuy&#x27;</span> : item.<span class="property">icon</span>.<span class="property">tags</span>[<span class="number">0</span>],</span><br><span class="line">		<span class="string">&#x27;color&#x27;</span> :item.<span class="property">icon</span>.<span class="property">attrs</span>[<span class="number">0</span>].<span class="property">fill</span>,</span><br><span class="line">	&#125;)</span><br><span class="line">&#125;);</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(arr);</span><br></pre>
+
+<p>把输出的信息复制到新的文件，并将其命名<code>config.js</code></p>
+<pre class="highlight"><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> <span class="title class_">ColorConfig</span> = [</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;x&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(48, 44, 44)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;ada&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(60, 200, 200)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;amp&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(45, 174, 228)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;ant&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(44, 211, 225)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;ardr&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(60, 135, 199)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;ark&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(247, 0, 0)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;bat&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(255, 80, 0)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;bcc&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(247, 147, 28)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;bch&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(247, 147, 26)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;bcn&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(240, 64, 134)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;bnb&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(243, 186, 47)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;btc&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(247, 147, 26)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;btcd&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(255, 102, 0)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;bts&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(53, 186, 235)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;dash&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(28, 117, 188)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;dcr&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(46, 214, 161)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;dgb&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(0, 106, 210)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;dgd&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(244, 208, 41)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;doge&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(195, 166, 52)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;emc&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(180, 159, 252)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;eos&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(180, 159, 252)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;etc&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(102, 144, 115)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;eth&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(98, 126, 234)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;fct&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(65, 123, 164)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;game&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(152, 192, 31)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;gbyte&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(48, 44, 44)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;gno&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(0, 166, 196)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;gnt&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(0, 29, 87)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;hsr&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(86, 66, 142)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;icn&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(76, 111, 140)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;kmd&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(50, 100, 100)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;knc&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(24, 140, 146)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;lkk&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(157, 1, 235)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;lsk&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(2, 136, 209)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;ltc&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(203, 198, 198)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;maid&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(85, 146, 215)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;miota&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(36, 36, 36)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;mln&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(11, 21, 41)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;mona&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(240, 219, 176)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;neo&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(0, 0, 0)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;nlg&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(42, 176, 253)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;nmc&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(24, 108, 157)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;nxt&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(0, 143, 187)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;omg&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(26, 83, 240)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;pay&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(48, 44, 44)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;pivx&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(94, 71, 120)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;pot&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(16, 91, 47)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;ppc&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(60, 176, 84)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;ppt&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(21, 39, 67)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;qtum&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(46, 154, 208)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;rep&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(96, 42, 82)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;salt&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(27, 238, 244)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;sc&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(0, 203, 160)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;sngls&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(179, 13, 35)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;steem&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(75, 162, 242)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;strat&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(19, 135, 201)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;trx&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(0, 0, 0)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;usdt&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(38, 161, 123)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;vtc&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(53, 99, 62)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;waves&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(0, 150, 220)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;xcp&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(237, 22, 80)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;xem&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(103, 178, 232)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;xlm&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(20, 182, 231)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;xmr&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(255, 102, 0)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;xrp&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(0, 170, 228)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;xtz&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(166, 224, 0)&#x27;</span> &#125;,</span><br><span class="line">    &#123; <span class="attr">cuy</span>: <span class="string">&#x27;zec&#x27;</span>, <span class="attr">color</span>: <span class="string">&#x27;rgb(236, 178, 68)&#x27;</span> &#125;</span><br><span class="line">    ];</span><br></pre>
+
+<p>这样，色彩配置文件封装好了。</p>
+<h1 id="加载色彩"><a href="#加载色彩" class="headerlink" title="加载色彩"></a>加载色彩</h1><p>按照上文所做，我们封装出自己的图标库，当调用到图标组建的时候，我们这么加载它：</p>
+ <pre class="highlight"><span class="line">import <span class="punctuation">&#123;</span>ColorConfig<span class="punctuation">&#125;</span> from &#x27;../icon/config&#x27;;</span><br><span class="line">render()<span class="punctuation">&#123;</span></span><br><span class="line">let color = &#x27;#f5922f&#x27;;</span><br><span class="line">ColorConfig.forEach((item<span class="punctuation">,</span>index)=&gt;<span class="punctuation">&#123;</span>if(item.cuy === cuy)  color = item.color<span class="punctuation">&#125;</span>);</span><br><span class="line">  return &lt;Icon name=<span class="punctuation">&#123;</span>cuy<span class="punctuation">&#125;</span> size=<span class="punctuation">&#123;</span><span class="number">48</span><span class="punctuation">&#125;</span> color=<span class="punctuation">&#123;</span>color<span class="punctuation">&#125;</span>/&gt;;</span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre>
+
+<h1 id="补全镂空"><a href="#补全镂空" class="headerlink" title="补全镂空"></a>补全镂空</h1><p>理论上现在就结束了，但是我发现了这样做的一个问题，如图所示</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/react-icon/2-1.png" class="lozad post-image"src="/content/images/react-icon/2-1.png"></p>
+<p>其实解决这个问题相当简单，只需要多加一层View，并将其底色设置为白色，切角设置为50%的圆（web端思路）</p>
+<p>但是，在实际运用的时候，发现<code>borderRadius</code>无法设置为<code>50%</code>，其实也不难，代码如下</p>
+<pre class="highlight"><span class="line">import <span class="punctuation">&#123;</span>ColorConfig<span class="punctuation">&#125;</span> from &#x27;../icon/config&#x27;;</span><br><span class="line">render()<span class="punctuation">&#123;</span></span><br><span class="line">let color = &#x27;#f5922f&#x27;;</span><br><span class="line">let w = this.props.width || <span class="number">48</span>;</span><br><span class="line">ColorConfig.forEach((item<span class="punctuation">,</span>index)=&gt;<span class="punctuation">&#123;</span>if(item.cuy === cuy)  color = item.color<span class="punctuation">&#125;</span>);</span><br><span class="line">  return (</span><br><span class="line">                &lt;View style=<span class="punctuation">&#123;</span><span class="punctuation">&#123;</span></span><br><span class="line">                    alignItems<span class="punctuation">:</span>&#x27;center&#x27;<span class="punctuation">,</span></span><br><span class="line">                    justifyContent<span class="punctuation">:</span>&#x27;center&#x27;<span class="punctuation">,</span></span><br><span class="line">                    borderRadius<span class="punctuation">:</span> w/<span class="number">2</span><span class="punctuation">,</span></span><br><span class="line">                    overflow<span class="punctuation">:</span> &#x27;hidden&#x27;<span class="punctuation">,</span></span><br><span class="line">                    backgroundColor <span class="punctuation">:</span> &#x27;#ffffff&#x27;<span class="punctuation">,</span></span><br><span class="line">                <span class="punctuation">&#125;</span><span class="punctuation">&#125;</span>&gt;</span><br><span class="line">                   &lt;Icon name=<span class="punctuation">&#123;</span>cuy<span class="punctuation">&#125;</span> size=<span class="punctuation">&#123;</span>w<span class="punctuation">&#125;</span> color=<span class="punctuation">&#123;</span>color<span class="punctuation">&#125;</span>/&gt;;</span><br><span class="line">                &lt;/View&gt;</span><br><span class="line">        )</span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre>
+
+<p>再看看效果，完美！</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/react-icon/2-2.png" class="lozad post-image"src="/content/images/react-icon/2-2.png"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/react-icon/2-3.png" class="lozad post-image"src="/content/images/react-icon/2-3.png"></p>
+<h1 id="效率问题"><a href="#效率问题" class="headerlink" title="效率问题"></a>效率问题</h1><p>这样手动封装的库，实际上会引发一些效率问题，比如在加载众多组建的时候，每一个组件都会重新读取一边色彩配置文件，并将其放入内存，实际上意义不大，浪费时间。</p>
+<p>实际上，我们可以把色彩配置文件和<code>selection.json</code>一并放在<code>store</code>中，或者放在最顶层的组件的<code>state</code>中，或者存成hashmap形式，内存只需要加载一次配置文件就够了。</p>
+<p>Anyway，这种方法有待优化，但是对于图标数量比较小的APP来说，优化的意义不大。</p>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  <div class="nav-item-prev">
+    <a href="/2017/11/30/快速撸出一个Brianfuck语言解释器/" class="nav-link">
+      <i class="iconfont icon-left nav-prev-icon"></i>
+      <div>
+        <div class="nav-label">上一篇</div>
+        
+        <div class="nav-title">快速撸出一个Brainfuck语言解释器 </div>
+        
+      </div>
+    </a>
+  </div>
+  
+  
+  <div class="nav-item-next">
+    <a href="/2017/11/20/React-Native-添加自定义图标库/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">React Native 添加自定义图标库 </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="toc-text">问题描述</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%96%87%E4%BB%B6%E5%A4%84%E7%90%86"><span class="toc-text">文件处理</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8A%A0%E8%BD%BD%E8%89%B2%E5%BD%A9"><span class="toc-text">加载色彩</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%A1%A5%E5%85%A8%E9%95%82%E7%A9%BA"><span class="toc-text">补全镂空</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%88%E7%8E%87%E9%97%AE%E9%A2%98"><span class="toc-text">效率问题</span></a></li></ol>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>72</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>26</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>26</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="toc-text">问题描述</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%96%87%E4%BB%B6%E5%A4%84%E7%90%86"><span class="toc-text">文件处理</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8A%A0%E8%BD%BD%E8%89%B2%E5%BD%A9"><span class="toc-text">加载色彩</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%A1%A5%E5%85%A8%E9%95%82%E7%A9%BA"><span class="toc-text">补全镂空</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%88%E7%8E%87%E9%97%AE%E9%A2%98"><span class="toc-text">效率问题</span></a></li></ol>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/traefik/" title="traefik"><div class="tags-list-item">traefik</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+    <a href="/tags/RaspberryPi/" title="RaspberryPi"><div class="tags-list-item">RaspberryPi</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="toc-text">问题描述</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%96%87%E4%BB%B6%E5%A4%84%E7%90%86"><span class="toc-text">文件处理</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8A%A0%E8%BD%BD%E8%89%B2%E5%BD%A9"><span class="toc-text">加载色彩</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%A1%A5%E5%85%A8%E9%95%82%E7%A9%BA"><span class="toc-text">补全镂空</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%88%E7%8E%87%E9%97%AE%E9%A2%98"><span class="toc-text">效率问题</span></a></li></ol>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-19</div>
+        <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/"><div class="recent-posts-item-content">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-10</div>
+        <a href="/2021/03/10/Traefik 2 群晖硬核指南/"><div class="recent-posts-item-content">Traefik 2 群晖硬核指南</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-02-26</div>
+        <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Big Sur 黑苹果安装教程</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2024
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>

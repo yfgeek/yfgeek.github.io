@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>走进流式付款的世界 Sablier 源码解读</title>
+  
+  
+  <meta property="og:title" content="走进流式付款的世界 Sablier 源码解读">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2021/01/24/%E8%B5%B0%E8%BF%9B%E6%B5%81%E5%BC%8F%E4%BB%98%E6%AC%BE%E7%9A%84%E4%B8%96%E7%95%8C%20Sablier%20%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB/index.html">
+  
+  
+  <meta property="og:img" content="/banners/sablier.png">
+  
+  
+  <meta property="og:img" content="Thinking as a Geek">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2021-01-24">
+  <meta property="og:article:modified_time" content="2024-05-15">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="Defi">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<div class="image-wrapper">
+  <img src="/banners/sablier.png" data-src="/banners/sablier.png"
+    srcset="data:image/svg+xml,%3Csvg%20xmlns=&#39;http://www.w3.org/2000/svg&#39;%20viewBox=&#39;0%200%20300%20300&#39;%3E%3C/svg%3E"
+    class="image lozad"
+    alt="thumbnail"
+  >
+</div>
+
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      走进流式付款的世界 Sablier 源码解读
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2021-01-24T03:04:36.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2021-01-24</span>
+    </time>
+    
+    <span class="dot"></span>
+    
+    <a href="/categories/Defi/" class="post-meta-link">Defi</a>
+    
+    
+    
+    <span class="dot"></span>
+    <span>3.2k 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/Defi/" class="post-meta-link">Defi</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <p>Sablier是以太坊实时金融协议，可以实现流式付款。简单的来说，就是可以最规定时间内，向指定地址不断的匀速付款，它改变了原有的支付方式。</p>
+<p>以老板支付工资为例，传统金融往往是每个月在固定时日支付工资，或是日结工资，难以做到秒结、分结。在去中心化金融（Defi）世界中，Sablier利用以太坊的智能合约，完美做到了向任何人付款，达到“秒结”的目的。</p>
+<p>Sablier有三个特色：</p>
+<ol>
+<li>秒结 </li>
+<li>使用Dai（去中心化稳定币）支付 </li>
+<li>基于ERC 1620构建</li>
+</ol>
+<p>可以应用的场景：支付薪水、订阅内容、咨询服务、纳税、租赁行业、停车场付费等。</p>
+<p>而这一切，都依赖于智能合约，那就跟我一起走进这个神奇的智能合约的世界。</p>
+<h2 id="ERC-20"><a href="#ERC-20" class="headerlink" title="ERC 20"></a>ERC 20</h2><p>开始之前，需要做一些基础铺垫，先解释一下万物之源——ERC 20。</p>
+<p>ERC全称“Ethereum Request for Comment”，其实就是以太坊草案的意思，ERC20，就是其草案编号。ERC20是Token标准。</p>
+<p>ERC20让“发币”变得更加简单，门槛极低，开启了通证经济时代。任何人只要符合这个标准，就可以发行自己的Token合约（代币）。</p>
+<h3 id="Token合约"><a href="#Token合约" class="headerlink" title="Token合约"></a>Token合约</h3><p>Token合约中的token，指的是代币，通过智能合约实现了一种代币持有情况的映射关系。如下图所示，一个token合约就是一个包含了一个对账户地址及其余额的映射的智能合约。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/sablier/1.png" class="lozad post-image"src="/content/images/sablier/1.png"></p>
+<p>在<a target="_blank" rel="noopener" href="https://etherscan.io/tokens">以太坊浏览器</a>中，我们可以浏览发行的ERC20代币Token和其合约代码。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/sablier/4.png" class="lozad post-image"src="/content/images/sablier/4.png"></p>
+<h3 id="EIP-20-协议"><a href="#EIP-20-协议" class="headerlink" title="EIP 20 协议"></a>EIP 20 协议</h3><p><a target="_blank" rel="noopener" href="https://eips.ethereum.org/EIPS/eip-1620">EIP 20</a>是对ERC20的协议实现，并且已经实现到以太坊中。EIP20提供的功能类似于将代币从一个账户转移到另一个账户，以及获取当前代币余额等功能。</p>
+<p>例子<br><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/sablier/2.png" class="lozad post-image"src="/content/images/sablier/2.png"></p>
+<p>方法</p>
+<pre class="highlight"><span class="line"><span class="comment">// 代币名称 如&quot;MyToken&quot;</span></span><br><span class="line">function <span class="title function_">name</span><span class="params">()</span> <span class="keyword">public</span> view <span class="title function_">returns</span> <span class="params">(string)</span></span><br><span class="line"><span class="comment">// 代币缩写 如&quot;MT&quot;</span></span><br><span class="line">function <span class="title function_">symbol</span><span class="params">()</span> <span class="keyword">public</span> view <span class="title function_">returns</span> <span class="params">(string)</span></span><br><span class="line"><span class="comment">// 精度，如8，则意味着代币实际值需除以100000000</span></span><br><span class="line">function <span class="title function_">decimals</span><span class="params">()</span> <span class="keyword">public</span> view <span class="title function_">returns</span> <span class="params">(uint8)</span></span><br><span class="line"><span class="comment">// 总发行量</span></span><br><span class="line">function <span class="title function_">totalSupply</span><span class="params">()</span> <span class="keyword">public</span> view <span class="title function_">returns</span> <span class="params">(uint256)</span></span><br><span class="line"><span class="comment">// 返回某个地址的余额</span></span><br><span class="line">function <span class="title function_">balanceOf</span><span class="params">(address _owner)</span> <span class="keyword">public</span> view <span class="title function_">returns</span> <span class="params">(uint256 balance)</span></span><br><span class="line"><span class="comment">// 转账_value个Token到_to地址上，同时必须触发Transfer事件</span></span><br><span class="line">function <span class="title function_">transfer</span><span class="params">(address _to, uint256 _value)</span> <span class="keyword">public</span> <span class="title function_">returns</span> <span class="params">(bool success)</span></span><br><span class="line"><span class="comment">// 转账_value个Token从_from到_to地址上，同时必须触发Transfer事件</span></span><br><span class="line">function <span class="title function_">transferFrom</span><span class="params">(address _from, address _to, uint256 _value)</span> <span class="keyword">public</span> <span class="title function_">returns</span> <span class="params">(bool success)</span></span><br><span class="line"><span class="comment">// 允许_spender多次提现，_value为限额，授权用户可代表我们花费的代币数</span></span><br><span class="line">function <span class="title function_">approve</span><span class="params">(address _spender, uint256 _value)</span> <span class="keyword">public</span> <span class="title function_">returns</span> <span class="params">(bool success)</span></span><br><span class="line"><span class="comment">// 允许_spender从_owner提现，授权花费的代币数</span></span><br><span class="line">function <span class="title function_">allowance</span><span class="params">(address _owner, address _spender)</span> <span class="keyword">public</span> view <span class="title function_">returns</span> <span class="params">(uint256 remaining)</span></span><br></pre>
+
+<p>事件</p>
+<p>以太坊的事件更类似于日志性质，可与前端同步数据，同时可以存储数据记录每笔交易的过程，方便溯源。</p>
+<pre class="highlight"><span class="line">event <span class="title function_">Transfer</span><span class="params">(address indexed _from, address indexed _to, uint256 _value)</span></span><br><span class="line">event <span class="title function_">Approval</span><span class="params">(address indexed _owner, address indexed _spender, uint256 _value)</span></span><br></pre>
+
+<p><strong>例子</strong></p>
+<pre class="highlight"><span class="line">pragma solidity ^<span class="number">0.4</span><span class="number">.20</span>;</span><br><span class="line"></span><br><span class="line">interface tokenRecipient &#123; <span class="keyword">function</span> <span class="title function_">receiveApproval</span>(<span class="params">address _from, uint256 _value, address _token, bytes _extraData</span>) external; &#125;</span><br><span class="line"></span><br><span class="line">contract <span class="title class_">TokenERC20</span> &#123;</span><br><span class="line">    string public name;</span><br><span class="line">    string public symbol;</span><br><span class="line">    uint8 public decimals = <span class="number">18</span>;  <span class="comment">// decimals 可以有的小数点个数，最小的代币单位。18 是建议的默认值</span></span><br><span class="line">    uint256 public totalSupply;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 用mapping保存每个地址对应的余额</span></span><br><span class="line">    mapping (<span class="function"><span class="params">address</span> =&gt;</span> uint256) public balanceOf;</span><br><span class="line">    <span class="comment">// 存储对账号的控制</span></span><br><span class="line">    mapping (<span class="function"><span class="params">address</span> =&gt;</span> mapping (<span class="function"><span class="params">address</span> =&gt;</span> uint256)) public allowance;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 事件，用来通知客户端交易发生</span></span><br><span class="line">    event <span class="title class_">Transfer</span>(address indexed <span class="keyword">from</span>, address indexed to, uint256 value);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 事件，用来通知客户端代币被消费</span></span><br><span class="line">    event <span class="title class_">Burn</span>(address indexed <span class="keyword">from</span>, uint256 value);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 初始化构造</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="title function_">constructor</span>(<span class="params">uint256 initialSupply, string tokenName, string tokenSymbol</span>) public &#123;</span><br><span class="line">        totalSupply = initialSupply * <span class="number">10</span> ** <span class="title function_">uint256</span>(decimals);  <span class="comment">// 供应的份额，份额跟最小的代币单位有关，份额 = 币数 * 10 ** decimals。</span></span><br><span class="line">        balanceOf[msg.<span class="property">sender</span>] = totalSupply;                <span class="comment">// 创建者拥有所有的代币</span></span><br><span class="line">        name = tokenName;                                   <span class="comment">// 代币名称</span></span><br><span class="line">        symbol = tokenSymbol;                               <span class="comment">// 代币符号</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 代币交易转移的内部实现</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">_transfer</span>(<span class="params">address _from, address _to, uint _value</span>) internal &#123;</span><br><span class="line">        <span class="comment">// 确保目标地址不为0x0，因为0x0地址代表销毁</span></span><br><span class="line">        <span class="built_in">require</span>(_to != <span class="number">0x0</span>);</span><br><span class="line">        <span class="comment">// 检查发送者余额</span></span><br><span class="line">        <span class="built_in">require</span>(balanceOf[_from] &gt;= _value);</span><br><span class="line">        <span class="comment">// 确保转移为正数个</span></span><br><span class="line">        <span class="built_in">require</span>(balanceOf[_to] + _value &gt; balanceOf[_to]);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 以下用来检查交易，</span></span><br><span class="line">        uint previousBalances = balanceOf[_from] + balanceOf[_to];</span><br><span class="line">        <span class="comment">// Subtract from the sender</span></span><br><span class="line">        balanceOf[_from] -= _value;</span><br><span class="line">        <span class="comment">// Add the same to the recipient</span></span><br><span class="line">        balanceOf[_to] += _value;</span><br><span class="line">        emit <span class="title class_">Transfer</span>(_from, _to, _value);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 用assert来检查代码逻辑。</span></span><br><span class="line">        <span class="title function_">assert</span>(balanceOf[_from] + balanceOf[_to] == previousBalances);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     *  代币交易转移</span></span><br><span class="line"><span class="comment">     * 从创建交易者账号发送`_value`个代币到 `_to`账号</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> _to 接收者地址</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> _value 转移数额</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">transfer</span>(<span class="params">address _to, uint256 _value</span>) public &#123;</span><br><span class="line">        <span class="title function_">_transfer</span>(msg.<span class="property">sender</span>, _to, _value);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 账号之间代币交易转移</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> _from 发送者地址</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> _to 接收者地址</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> _value 转移数额</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">transferFrom</span>(<span class="params">address _from, address _to, uint256 _value</span>) public returns (bool success) &#123;</span><br><span class="line">        <span class="built_in">require</span>(_value &lt;= allowance[_from][msg.<span class="property">sender</span>]);     <span class="comment">// Check allowance</span></span><br><span class="line">        allowance[_from][msg.<span class="property">sender</span>] -= _value;</span><br><span class="line">        <span class="title function_">_transfer</span>(_from, _to, _value);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 设置某个地址（合约）可以交易者名义花费的代币数。</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * 允许发送者`_spender` 花费不多于 `_value` 个代币</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> _spender The address authorized to spend</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> _value the max amount they can spend</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">approve</span>(<span class="params">address _spender, uint256 _value</span>) public</span><br><span class="line">    returns (bool success) &#123;</span><br><span class="line">        allowance[msg.<span class="property">sender</span>][_spender] = _value;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 设置允许一个地址（合约）以交易者名义可最多花费的代币数。</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> _spender 被授权的地址（合约）</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> _value 最大可花费代币数</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> _extraData 发送给合约的附加数据</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">approveAndCall</span>(<span class="params">address _spender, uint256 _value, bytes _extraData</span>)</span><br><span class="line">    public</span><br><span class="line">    returns (bool success) &#123;</span><br><span class="line">        tokenRecipient spender = <span class="title function_">tokenRecipient</span>(_spender);</span><br><span class="line">        <span class="keyword">if</span> (<span class="title function_">approve</span>(_spender, _value)) &#123;</span><br><span class="line">            spender.<span class="title function_">receiveApproval</span>(msg.<span class="property">sender</span>, _value, <span class="variable language_">this</span>, _extraData);</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 销毁创建者账户中指定个代币</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">burn</span>(<span class="params">uint256 _value</span>) public returns (bool success) &#123;</span><br><span class="line">        <span class="built_in">require</span>(balanceOf[msg.<span class="property">sender</span>] &gt;= _value);   <span class="comment">// Check if the sender has enough</span></span><br><span class="line">        balanceOf[msg.<span class="property">sender</span>] -= _value;            <span class="comment">// Subtract from the sender</span></span><br><span class="line">        totalSupply -= _value;                      <span class="comment">// Updates totalSupply</span></span><br><span class="line">        emit <span class="title class_">Burn</span>(msg.<span class="property">sender</span>, _value);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 销毁用户账户中指定个代币</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * Remove `_value` tokens from the system irreversibly on behalf of `_from`.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> _from the address of the sender</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> _value the amount of money to burn</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">burnFrom</span>(<span class="params">address _from, uint256 _value</span>) public returns (bool success) &#123;</span><br><span class="line">        <span class="built_in">require</span>(balanceOf[_from] &gt;= _value);                <span class="comment">// Check if the targeted balance is enough</span></span><br><span class="line">        <span class="built_in">require</span>(_value &lt;= allowance[_from][msg.<span class="property">sender</span>]);    <span class="comment">// Check allowance</span></span><br><span class="line">        balanceOf[_from] -= _value;                         <span class="comment">// Subtract from the targeted balance</span></span><br><span class="line">        allowance[_from][msg.<span class="property">sender</span>] -= _value;             <span class="comment">// Subtract from the sender&#x27;s allowance</span></span><br><span class="line">        totalSupply -= _value;                              <span class="comment">// Update totalSupply</span></span><br><span class="line">        emit <span class="title class_">Burn</span>(_from, _value);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre>
+
+<p>只要将上述的智能合约发布到以太坊上，与该智能合约做交易，即可完成代币的发行、金额分配。</p>
+<h2 id="ERC-1620"><a href="#ERC-1620" class="headerlink" title="ERC 1620"></a>ERC 1620</h2><p>铺垫了那么多，其实ERC 1620 也是一种Token代币协议，是对ERC 20的封装与改进，为其加入了流式协议。</p>
+<p>在流式协议中，对每一个流式付款的开始、停止、提现，都有记录。</p>
+<p>前端根据对应的事件记录，做出UI上的响应。</p>
+<pre class="highlight"><span class="line">pragma solidity <span class="number">0.5</span><span class="number">.11</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@title</span> <span class="variable">ERC</span>-1620 Money Streaming Standard</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> <span class="variable">Sablier</span></span></span><br><span class="line"><span class="comment"> * <span class="doctag">@dev</span> See https://eips.ethereum.org/EIPS/eip-1620</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">interface <span class="title class_">IERC1620</span> &#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@notice</span> Emits when a stream is successfully created.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    event <span class="title class_">CreateStream</span>(</span><br><span class="line">        uint256 indexed streamId,</span><br><span class="line">        address indexed sender,</span><br><span class="line">        address indexed recipient,</span><br><span class="line">        uint256 deposit,</span><br><span class="line">        address tokenAddress,</span><br><span class="line">        uint256 startTime,</span><br><span class="line">        uint256 stopTime</span><br><span class="line">    );</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@notice</span> Emits when the recipient of a stream withdraws a portion or all their pro rata share of the stream.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    event <span class="title class_">WithdrawFromStream</span>(uint256 indexed streamId, address indexed recipient, uint256 amount);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@notice</span> Emits when a stream is successfully cancelled and tokens are transferred back on a pro rata basis.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    event <span class="title class_">CancelStream</span>(</span><br><span class="line">        uint256 indexed streamId,</span><br><span class="line">        address indexed sender,</span><br><span class="line">        address indexed recipient,</span><br><span class="line">        uint256 senderBalance,</span><br><span class="line">        uint256 recipientBalance</span><br><span class="line">    );</span><br><span class="line"></span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">balanceOf</span>(<span class="params">uint256 streamId, address who</span>) external view returns (uint256 balance);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">getStream</span>(<span class="params">uint256 streamId</span>)</span><br><span class="line">        external</span><br><span class="line">        view</span><br><span class="line">        returns (</span><br><span class="line">            address sender,</span><br><span class="line">            address recipient,</span><br><span class="line">            uint256 deposit,</span><br><span class="line">            address token,</span><br><span class="line">            uint256 startTime,</span><br><span class="line">            uint256 stopTime,</span><br><span class="line">            uint256 remainingBalance,</span><br><span class="line">            uint256 ratePerSecond</span><br><span class="line">        );</span><br><span class="line"></span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">createStream</span>(<span class="params">address recipient, uint256 deposit, address tokenAddress, uint256 startTime, uint256 stopTime</span>)</span><br><span class="line">        external</span><br><span class="line">        returns (uint256 streamId);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">withdrawFromStream</span>(<span class="params">uint256 streamId, uint256 funds</span>) external returns (bool);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">cancelStream</span>(<span class="params">uint256 streamId</span>) external returns (bool);</span><br><span class="line">&#125;</span><br></pre>
+
+<h3 id="Sablier-关键源码"><a href="#Sablier-关键源码" class="headerlink" title="Sablier 关键源码"></a>Sablier 关键源码</h3><p>本质上来说，Sablier是对ERC 1620的实现，仔细阅读代码，不难看出流式付款，不是每秒做交易，只是在关键的时间节点，打上对应的事件记录，中间看似 秒薪，实际上是web上的显示动画，只有“提现withdraw”才会真正的触发交易。</p>
+<p>当然，这个动画值得信任，毕竟起始点和终止点都有记录，在任何一个计算机上展示的动画，都应该是一样的，谁也无法篡改中间的值。</p>
+<pre class="highlight"><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">  * <span class="doctag">@notice</span> Creates a new stream funded by `msg.sender` and paid towards `recipient`.</span></span><br><span class="line"><span class="comment">  * <span class="doctag">@dev</span> Throws if paused.</span></span><br><span class="line"><span class="comment">  *  Throws if the recipient is the zero address, the contract itself or the caller.</span></span><br><span class="line"><span class="comment">  *  Throws if the deposit is 0.</span></span><br><span class="line"><span class="comment">  *  Throws if the start time is before `block.timestamp`.</span></span><br><span class="line"><span class="comment">  *  Throws if the stop time is before the start time.</span></span><br><span class="line"><span class="comment">  *  Throws if the duration calculation has a math error.</span></span><br><span class="line"><span class="comment">  *  Throws if the deposit is smaller than the duration.</span></span><br><span class="line"><span class="comment">  *  Throws if the deposit is not a multiple of the duration.</span></span><br><span class="line"><span class="comment">  *  Throws if the rate calculation has a math error.</span></span><br><span class="line"><span class="comment">  *  Throws if the next stream id calculation has a math error.</span></span><br><span class="line"><span class="comment">  *  Throws if the contract is not allowed to transfer enough tokens.</span></span><br><span class="line"><span class="comment">  *  Throws if there is a token transfer failure.</span></span><br><span class="line"><span class="comment">  * <span class="doctag">@param</span> recipient The address towards which the money is streamed.</span></span><br><span class="line"><span class="comment">  * <span class="doctag">@param</span> deposit The amount of money to be streamed.</span></span><br><span class="line"><span class="comment">  * <span class="doctag">@param</span> tokenAddress The ERC20 token to use as streaming currency.</span></span><br><span class="line"><span class="comment">  * <span class="doctag">@param</span> startTime The unix timestamp for when the stream starts.</span></span><br><span class="line"><span class="comment">  * <span class="doctag">@param</span> stopTime The unix timestamp for when the stream stops.</span></span><br><span class="line"><span class="comment">  * <span class="doctag">@return</span> The uint256 id of the newly created stream.</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line"> <span class="keyword">function</span> <span class="title function_">createStream</span>(<span class="params">address recipient, uint256 deposit, address tokenAddress, uint256 startTime, uint256 stopTime</span>)</span><br><span class="line">     public</span><br><span class="line">     whenNotPaused</span><br><span class="line">     returns (uint256)</span><br><span class="line"> &#123;</span><br><span class="line">     <span class="built_in">require</span>(recipient != <span class="title function_">address</span>(<span class="number">0x00</span>), <span class="string">&quot;stream to the zero address&quot;</span>);</span><br><span class="line">     <span class="built_in">require</span>(recipient != <span class="title function_">address</span>(<span class="variable language_">this</span>), <span class="string">&quot;stream to the contract itself&quot;</span>);</span><br><span class="line">     <span class="built_in">require</span>(recipient != msg.<span class="property">sender</span>, <span class="string">&quot;stream to the caller&quot;</span>);</span><br><span class="line">     <span class="built_in">require</span>(deposit &gt; <span class="number">0</span>, <span class="string">&quot;deposit is zero&quot;</span>);</span><br><span class="line">     <span class="built_in">require</span>(startTime &gt;= block.<span class="property">timestamp</span>, <span class="string">&quot;start time before block.timestamp&quot;</span>);</span><br><span class="line">     <span class="built_in">require</span>(stopTime &gt; startTime, <span class="string">&quot;stop time before the start time&quot;</span>);</span><br><span class="line"></span><br><span class="line">     <span class="title class_">CreateStreamLocalVars</span> memory vars;</span><br><span class="line">     (vars.<span class="property">mathErr</span>, vars.<span class="property">duration</span>) = <span class="title function_">subUInt</span>(stopTime, startTime);</span><br><span class="line">     <span class="comment">/* `subUInt` can only return MathError.INTEGER_UNDERFLOW but we know `stopTime` is higher than `startTime`. */</span></span><br><span class="line">     <span class="title function_">assert</span>(vars.<span class="property">mathErr</span> == <span class="title class_">MathError</span>.<span class="property">NO_ERROR</span>);</span><br><span class="line"></span><br><span class="line">     <span class="comment">/* Without this, the rate per second would be zero. */</span></span><br><span class="line">     <span class="built_in">require</span>(deposit &gt;= vars.<span class="property">duration</span>, <span class="string">&quot;deposit smaller than time delta&quot;</span>);</span><br><span class="line"></span><br><span class="line">     <span class="comment">/* This condition avoids dealing with remainders */</span></span><br><span class="line">     <span class="built_in">require</span>(deposit % vars.<span class="property">duration</span> == <span class="number">0</span>, <span class="string">&quot;deposit not multiple of time delta&quot;</span>);</span><br><span class="line"></span><br><span class="line">     (vars.<span class="property">mathErr</span>, vars.<span class="property">ratePerSecond</span>) = <span class="title function_">divUInt</span>(deposit, vars.<span class="property">duration</span>);</span><br><span class="line">     <span class="comment">/* `divUInt` can only return MathError.DIVISION_BY_ZERO but we know `duration` is not zero. */</span></span><br><span class="line">     <span class="title function_">assert</span>(vars.<span class="property">mathErr</span> == <span class="title class_">MathError</span>.<span class="property">NO_ERROR</span>);</span><br><span class="line"></span><br><span class="line">     <span class="comment">/* Create and store the stream object. */</span></span><br><span class="line">     uint256 streamId = nextStreamId;</span><br><span class="line">     streams[streamId] = <span class="title class_">Types</span>.<span class="title class_">Stream</span>(&#123;</span><br><span class="line">         <span class="attr">remainingBalance</span>: deposit,</span><br><span class="line">         <span class="attr">deposit</span>: deposit,</span><br><span class="line">         <span class="attr">isEntity</span>: <span class="literal">true</span>,</span><br><span class="line">         <span class="attr">ratePerSecond</span>: vars.<span class="property">ratePerSecond</span>,</span><br><span class="line">         <span class="attr">recipient</span>: recipient,</span><br><span class="line">         <span class="attr">sender</span>: msg.<span class="property">sender</span>,</span><br><span class="line">         <span class="attr">startTime</span>: startTime,</span><br><span class="line">         <span class="attr">stopTime</span>: stopTime,</span><br><span class="line">         <span class="attr">tokenAddress</span>: tokenAddress</span><br><span class="line">     &#125;);</span><br><span class="line"></span><br><span class="line">     <span class="comment">/* Increment the next stream id. */</span></span><br><span class="line">     (vars.<span class="property">mathErr</span>, nextStreamId) = <span class="title function_">addUInt</span>(nextStreamId, <span class="title function_">uint256</span>(<span class="number">1</span>));</span><br><span class="line">     <span class="built_in">require</span>(vars.<span class="property">mathErr</span> == <span class="title class_">MathError</span>.<span class="property">NO_ERROR</span>, <span class="string">&quot;next stream id calculation error&quot;</span>);</span><br><span class="line"></span><br><span class="line">     <span class="built_in">require</span>(<span class="title class_">IERC20</span>(tokenAddress).<span class="title function_">transferFrom</span>(msg.<span class="property">sender</span>, <span class="title function_">address</span>(<span class="variable language_">this</span>), deposit), <span class="string">&quot;token transfer failure&quot;</span>);</span><br><span class="line">     emit <span class="title class_">CreateStream</span>(streamId, msg.<span class="property">sender</span>, recipient, deposit, tokenAddress, startTime, stopTime);</span><br><span class="line">     <span class="keyword">return</span> streamId;</span><br><span class="line"> &#125;</span><br><span class="line"></span><br><span class="line"> struct <span class="title class_">CreateCompoundingStreamLocalVars</span> &#123;</span><br><span class="line">     <span class="title class_">MathError</span> mathErr;</span><br><span class="line">     uint256 shareSum;</span><br><span class="line">     uint256 underlyingBalance;</span><br><span class="line">     uint256 senderShareMantissa;</span><br><span class="line">     uint256 recipientShareMantissa;</span><br><span class="line"> &#125;</span><br></pre>
+
+<p>如下是计算当前流式付款单id的账户余额的方法。</p>
+<pre class="highlight"><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">    * <span class="doctag">@notice</span> Returns the available funds for the given stream id and address.</span></span><br><span class="line"><span class="comment">    * <span class="doctag">@dev</span> Throws if the id does not point to a valid stream.</span></span><br><span class="line"><span class="comment">    * <span class="doctag">@param</span> streamId The id of the stream for which to query the balance.</span></span><br><span class="line"><span class="comment">    * <span class="doctag">@param</span> who The address for which to query the balance.</span></span><br><span class="line"><span class="comment">    * <span class="doctag">@return</span> The total funds allocated to `who` as uint256.</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">   <span class="keyword">function</span> <span class="title function_">balanceOf</span>(<span class="params">uint256 streamId, address who</span>) public view <span class="title function_">streamExists</span>(streamId) returns (uint256 balance) &#123;</span><br><span class="line">       <span class="title class_">Types</span>.<span class="property">Stream</span> memory stream = streams[streamId];</span><br><span class="line">       <span class="title class_">BalanceOfLocalVars</span> memory vars;</span><br><span class="line"></span><br><span class="line">       uint256 delta = <span class="title function_">deltaOf</span>(streamId);</span><br><span class="line">       (vars.<span class="property">mathErr</span>, vars.<span class="property">recipientBalance</span>) = <span class="title function_">mulUInt</span>(delta, stream.<span class="property">ratePerSecond</span>);</span><br><span class="line">       <span class="built_in">require</span>(vars.<span class="property">mathErr</span> == <span class="title class_">MathError</span>.<span class="property">NO_ERROR</span>, <span class="string">&quot;recipient balance calculation error&quot;</span>);</span><br><span class="line"></span><br><span class="line">       <span class="comment">/*</span></span><br><span class="line"><span class="comment">        * If the stream `balance` does not equal `deposit`, it means there have been withdrawals.</span></span><br><span class="line"><span class="comment">        * We have to subtract the total amount withdrawn from the amount of money that has been</span></span><br><span class="line"><span class="comment">        * streamed until now.</span></span><br><span class="line"><span class="comment">        */</span></span><br><span class="line">       <span class="keyword">if</span> (stream.<span class="property">deposit</span> &gt; stream.<span class="property">remainingBalance</span>) &#123;</span><br><span class="line">           (vars.<span class="property">mathErr</span>, vars.<span class="property">withdrawalAmount</span>) = <span class="title function_">subUInt</span>(stream.<span class="property">deposit</span>, stream.<span class="property">remainingBalance</span>);</span><br><span class="line">           <span class="title function_">assert</span>(vars.<span class="property">mathErr</span> == <span class="title class_">MathError</span>.<span class="property">NO_ERROR</span>);</span><br><span class="line">           (vars.<span class="property">mathErr</span>, vars.<span class="property">recipientBalance</span>) = <span class="title function_">subUInt</span>(vars.<span class="property">recipientBalance</span>, vars.<span class="property">withdrawalAmount</span>);</span><br><span class="line">           <span class="comment">/* `withdrawalAmount` cannot and should not be bigger than `recipientBalance`. */</span></span><br><span class="line">           <span class="title function_">assert</span>(vars.<span class="property">mathErr</span> == <span class="title class_">MathError</span>.<span class="property">NO_ERROR</span>);</span><br><span class="line">       &#125;</span><br><span class="line"></span><br><span class="line">       <span class="keyword">if</span> (who == stream.<span class="property">recipient</span>) <span class="keyword">return</span> vars.<span class="property">recipientBalance</span>;</span><br><span class="line">       <span class="keyword">if</span> (who == stream.<span class="property">sender</span>) &#123;</span><br><span class="line">           (vars.<span class="property">mathErr</span>, vars.<span class="property">senderBalance</span>) = <span class="title function_">subUInt</span>(stream.<span class="property">remainingBalance</span>, vars.<span class="property">recipientBalance</span>);</span><br><span class="line">           <span class="comment">/* `recipientBalance` cannot and should not be bigger than `remainingBalance`. */</span></span><br><span class="line">           <span class="title function_">assert</span>(vars.<span class="property">mathErr</span> == <span class="title class_">MathError</span>.<span class="property">NO_ERROR</span>);</span><br><span class="line">           <span class="keyword">return</span> vars.<span class="property">senderBalance</span>;</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br></pre>
+
+<p>不难看出，流式付款协议的事件计算方法，因为以太坊默认没有系统时间函数，是以区块时间戳为关键计算变量的。</p>
+<pre class="highlight"><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">  * <span class="doctag">@notice</span> Returns either the delta in seconds between `block.timestamp` and `startTime` or</span></span><br><span class="line"><span class="comment">  *  between `stopTime` and `startTime, whichever is smaller. If `block.timestamp` is before</span></span><br><span class="line"><span class="comment">  *  `startTime`, it returns 0.</span></span><br><span class="line"><span class="comment">  * <span class="doctag">@dev</span> Throws if the id does not point to a valid stream.</span></span><br><span class="line"><span class="comment">  * <span class="doctag">@param</span> streamId The id of the stream for which to query the delta.</span></span><br><span class="line"><span class="comment">  * <span class="doctag">@return</span> The time delta in seconds.</span></span><br><span class="line"><span class="comment">  */</span></span><br><span class="line"> <span class="keyword">function</span> <span class="title function_">deltaOf</span>(<span class="params">uint256 streamId</span>) public view <span class="title function_">streamExists</span>(streamId) returns (uint256 delta) &#123;</span><br><span class="line">     <span class="title class_">Types</span>.<span class="property">Stream</span> memory stream = streams[streamId];</span><br><span class="line">     <span class="keyword">if</span> (block.<span class="property">timestamp</span> &lt;= stream.<span class="property">startTime</span>) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">     <span class="keyword">if</span> (block.<span class="property">timestamp</span> &lt; stream.<span class="property">stopTime</span>) <span class="keyword">return</span> block.<span class="property">timestamp</span> - stream.<span class="property">startTime</span>;</span><br><span class="line">     <span class="keyword">return</span> stream.<span class="property">stopTime</span> - stream.<span class="property">startTime</span>;</span><br><span class="line"> &#125;</span><br></pre>
+
+<p>如下是取现的实现方式，本质上是调用了ERC20上的<code>transfer</code>方法，把流式协议中对应的金额提取到对应收款人账户下，取现需收款人主动触发交易。</p>
+<pre class="highlight"><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@notice</span> Makes the withdrawal to the recipient of the stream.</span></span><br><span class="line"><span class="comment">   * <span class="doctag">@dev</span> If the stream balance has been depleted to 0, the stream object is deleted</span></span><br><span class="line"><span class="comment">   *  to save gas and optimise contract storage.</span></span><br><span class="line"><span class="comment">   *  Throws if the stream balance calculation has a math error.</span></span><br><span class="line"><span class="comment">   *  Throws if there is a token transfer failure.</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="keyword">function</span> <span class="title function_">withdrawFromStreamInternal</span>(<span class="params">uint256 streamId, uint256 amount</span>) internal &#123;</span><br><span class="line">      <span class="title class_">Types</span>.<span class="property">Stream</span> memory stream = streams[streamId];</span><br><span class="line">      <span class="title class_">WithdrawFromStreamInternalLocalVars</span> memory vars;</span><br><span class="line">      (vars.<span class="property">mathErr</span>, streams[streamId].<span class="property">remainingBalance</span>) = <span class="title function_">subUInt</span>(stream.<span class="property">remainingBalance</span>, amount);</span><br><span class="line">      <span class="comment">/**</span></span><br><span class="line"><span class="comment">       * `subUInt` can only return MathError.INTEGER_UNDERFLOW but we know that `remainingBalance` is at least</span></span><br><span class="line"><span class="comment">       * as big as `amount`. See the `require` check in `withdrawFromInternal`.</span></span><br><span class="line"><span class="comment">       */</span></span><br><span class="line">      <span class="title function_">assert</span>(vars.<span class="property">mathErr</span> == <span class="title class_">MathError</span>.<span class="property">NO_ERROR</span>);</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> (streams[streamId].<span class="property">remainingBalance</span> == <span class="number">0</span>) <span class="keyword">delete</span> streams[streamId];</span><br><span class="line"></span><br><span class="line">      <span class="built_in">require</span>(<span class="title class_">IERC20</span>(stream.<span class="property">tokenAddress</span>).<span class="title function_">transfer</span>(stream.<span class="property">recipient</span>, amount), <span class="string">&quot;token transfer failure&quot;</span>);</span><br><span class="line">      emit <span class="title class_">WithdrawFromStream</span>(streamId, stream.<span class="property">recipient</span>, amount);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br></pre>
+
+<p>如下是Sablier上的Events记录，真实的例子。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/sablier/3.png" class="lozad post-image"src="/content/images/sablier/3.png"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>Sablier给我们带来了一种全新的理念，付款可以达到流式效果，分析源码，不难得出，实际上在区块链的交易上，并没有每一秒都触发一次<code>transfer</code>转账交易，而是在流式付款协议创建、结束、提现的时候，记录了关键的时间节点，其实，只有提现的时间，才是真正完成转账的时间。</p>
+<p>值得注意的是，每一次提现都会带来交易手续费，这恐怕是无法避免的缺点，ERC1620标准将这种缺点降低到了最低，使用“虚假的前端展示”的流式转账，既保障了“流式”，又保障了尽可能少的手续费，也保障了交易的真实性。</p>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  <div class="nav-item-prev">
+    <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/" class="nav-link">
+      <i class="iconfont icon-left nav-prev-icon"></i>
+      <div>
+        <div class="nav-label">上一篇</div>
+        
+        <div class="nav-title">NUC5i5RYH Big Sur 黑苹果安装教程 </div>
+        
+      </div>
+    </a>
+  </div>
+  
+  
+  <div class="nav-item-next">
+    <a href="/2020/09/28/在树莓派上编译运行GTA3/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">在树莓派上编译运行GTA3 </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#ERC-20"><span class="toc-text">ERC 20</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Token%E5%90%88%E7%BA%A6"><span class="toc-text">Token合约</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#EIP-20-%E5%8D%8F%E8%AE%AE"><span class="toc-text">EIP 20 协议</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ERC-1620"><span class="toc-text">ERC 1620</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Sablier-%E5%85%B3%E9%94%AE%E6%BA%90%E7%A0%81"><span class="toc-text">Sablier 关键源码</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-text">总结</span></a></li></ol>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>72</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>26</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>26</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#ERC-20"><span class="toc-text">ERC 20</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Token%E5%90%88%E7%BA%A6"><span class="toc-text">Token合约</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#EIP-20-%E5%8D%8F%E8%AE%AE"><span class="toc-text">EIP 20 协议</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ERC-1620"><span class="toc-text">ERC 1620</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Sablier-%E5%85%B3%E9%94%AE%E6%BA%90%E7%A0%81"><span class="toc-text">Sablier 关键源码</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-text">总结</span></a></li></ol>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/traefik/" title="traefik"><div class="tags-list-item">traefik</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+    <a href="/tags/RaspberryPi/" title="RaspberryPi"><div class="tags-list-item">RaspberryPi</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#ERC-20"><span class="toc-text">ERC 20</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Token%E5%90%88%E7%BA%A6"><span class="toc-text">Token合约</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#EIP-20-%E5%8D%8F%E8%AE%AE"><span class="toc-text">EIP 20 协议</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ERC-1620"><span class="toc-text">ERC 1620</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Sablier-%E5%85%B3%E9%94%AE%E6%BA%90%E7%A0%81"><span class="toc-text">Sablier 关键源码</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-text">总结</span></a></li></ol>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-19</div>
+        <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/"><div class="recent-posts-item-content">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-10</div>
+        <a href="/2021/03/10/Traefik 2 群晖硬核指南/"><div class="recent-posts-item-content">Traefik 2 群晖硬核指南</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-02-26</div>
+        <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Big Sur 黑苹果安装教程</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2024
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>

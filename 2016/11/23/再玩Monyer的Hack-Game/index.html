@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>再玩Monyer的Hack Game</title>
+  
+  
+  <meta property="og:title" content="再玩Monyer的Hack Game">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2016/11/23/%E5%86%8D%E7%8E%A9Monyer%E7%9A%84Hack-Game/index.html">
+  
+  
+  <meta property="og:img" content="/content/images/blog/me.jpg">
+  
+  
+  <meta property="og:img" content="&lt;p&gt;之前混百度空间混久了，认识很多大牛，不乏monyer大牛。很早很早以前，他做了一个黑客小游戏，当时还不太会玩，现在突然打开发现，网站竟然还活着，决定重温经典。&lt;/p&gt;">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2016-11-23">
+  <meta property="og:article:modified_time" content="2024-05-15">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="Hack">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      再玩Monyer的Hack Game
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2016-11-23T11:15:20.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2016-11-23</span>
+    </time>
+    
+    <span class="dot"></span>
+    
+    <a href="/categories/Hack/" class="post-meta-link">Hack</a>
+    
+    
+    
+    <span class="dot"></span>
+    <span>2.2k 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/Hack/" class="post-meta-link">Hack</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <p>之前混百度空间混久了，认识很多大牛，不乏monyer大牛。很早很早以前，他做了一个黑客小游戏，当时还不太会玩，现在突然打开发现，网站竟然还活着，决定重温经典。</p>
+<span id="more"></span>
+
+<h1 id="第零关"><a href="#第零关" class="headerlink" title="第零关"></a>第零关</h1><p><a target="_blank" rel="noopener" href="http://monyer.com/game/game1/">http://monyer.com/game/game1/</a></p>
+<blockquote>
+<p>请点击链接进入第1关： 连接在左边→ ←连接在右边</p>
+</blockquote>
+<p>可是我们看不到链接地址，直接打开审查工具。</p>
+<pre class="highlight"><span class="line"><span class="tag">&lt;<span class="name">span</span>&gt;</span>连接在左边→<span class="tag">&lt;/<span class="name">span</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&quot;first.php&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">span</span>&gt;</span>←连接在右边<span class="tag">&lt;/<span class="name">span</span>&gt;</span></span><br></pre>
+<p>好的输入地址，我么进入第一关</p>
+<h1 id="第一关"><a href="#第一关" class="headerlink" title="第一关"></a>第一关</h1><p><a target="_blank" rel="noopener" href="http://monyer.com/game/game1/first.php">http://monyer.com/game/game1/first.php</a></p>
+<p>打开页面依然是什么都没有，这很正常。审查工具看代码。</p>
+<pre class="highlight"><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/rocketscript&quot;</span> <span class="attr">data-rocketoptimized</span>=<span class="string">&quot;true&quot;</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">function</span> <span class="title function_">check</span>(<span class="params"></span>)&#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">if</span>(<span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&#x27;txt&#x27;</span>).<span class="property">value</span>==<span class="string">&quot;  &quot;</span>)&#123;</span></span><br><span class="line"><span class="language-javascript">            <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span>=<span class="string">&quot;hello.php&quot;</span>;</span></span><br><span class="line"><span class="language-javascript">        &#125;<span class="keyword">else</span>&#123;</span></span><br><span class="line"><span class="language-javascript">            <span class="title function_">alert</span>(<span class="string">&quot;密码错误&quot;</span>);</span></span><br><span class="line"><span class="language-javascript">        &#125;</span></span><br><span class="line"><span class="language-javascript">    &#125;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre>
+
+<p>好了 我们知道密码了，并且知道下一关的文件是hello.php</p>
+<h1 id="第二关"><a href="#第二关" class="headerlink" title="第二关"></a>第二关</h1><p><a target="_blank" rel="noopener" href="http://monyer.com/game/game1/hello.php">http://monyer.com/game/game1/hello.php</a></p>
+<p>审查工具看源代码，head中</p>
+<pre class="highlight"><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">type</span>=<span class="string">&quot;text/rocketscript&quot;</span> <span class="attr">data-rocketoptimized</span>=<span class="string">&quot;true&quot;</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">    <span class="variable language_">document</span>.<span class="property">oncontextmenu</span>=<span class="keyword">function</span>(<span class="params"></span>)&#123;<span class="keyword">return</span> <span class="literal">false</span>&#125;;</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">var</span> a,b,c,d,e,f,g;</span></span><br><span class="line"><span class="language-javascript">    a = <span class="number">3.14</span>;</span></span><br><span class="line"><span class="language-javascript">    b = a * <span class="number">2</span>;</span></span><br><span class="line"><span class="language-javascript">    c = a + b;</span></span><br><span class="line"><span class="language-javascript">    d = c / b + a;</span></span><br><span class="line"><span class="language-javascript">    e = c - d * b + a;</span></span><br><span class="line"><span class="language-javascript">    f = e + d /c -b * a;</span></span><br><span class="line"><span class="language-javascript">    g = f * e - d + c * b + a;</span></span><br><span class="line"><span class="language-javascript">    a = g * g;</span></span><br><span class="line"><span class="language-javascript">    a = <span class="title class_">Math</span>.<span class="title function_">floor</span>(a);</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">function</span> <span class="title function_">check</span>(<span class="params"></span>)&#123;</span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">if</span>(<span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&quot;txt&quot;</span>).<span class="property">value</span>==a)&#123;</span></span><br><span class="line"><span class="language-javascript">            <span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span>=a + <span class="string">&quot;.php&quot;</span>;</span></span><br><span class="line"><span class="language-javascript">        &#125;<span class="keyword">else</span>&#123;</span></span><br><span class="line"><span class="language-javascript">            <span class="title function_">alert</span>(<span class="string">&quot;密码错误&quot;</span>);</span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">return</span> <span class="literal">false</span>;</span></span><br><span class="line"><span class="language-javascript">        &#125;</span></span><br><span class="line"><span class="language-javascript">    &#125;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre>
+
+<p>现在是2016年了，我们不需要手算和计算器了。直接在chrome的console里输入</p>
+<pre class="highlight"><span class="line"><span class="keyword">var</span> a,b,c,d,e,f,g;</span><br><span class="line">    a = <span class="number">3.14</span>;</span><br><span class="line">    b = a * <span class="number">2</span>;</span><br><span class="line">    c = a + b;</span><br><span class="line">    d = c / b + a;</span><br><span class="line">    e = c - d * b + a;</span><br><span class="line">    f = e + d /c -b * a;</span><br><span class="line">    g = f * e - d + c * b + a;</span><br><span class="line">    a = g * g;</span><br><span class="line">    a = <span class="title class_">Math</span>.<span class="title function_">floor</span>(a);</span><br><span class="line">    </span><br><span class="line"><span class="number">424178</span></span><br></pre>
+<p>好的我们知道a的值是424178，输入，进入下一关</p>
+<h1 id="第三关"><a href="#第三关" class="headerlink" title="第三关"></a>第三关</h1><p><a target="_blank" rel="noopener" href="http://monyer.com/game/game1/424178.php">http://monyer.com/game/game1/424178.php</a></p>
+<p>head中存在js</p>
+<pre class="highlight"><span class="line">&lt;script type=<span class="string">&quot;text/rocketscript&quot;</span> data-rocketoptimized=<span class="string">&quot;true&quot;</span>&gt;</span><br><span class="line">    <span class="built_in">eval</span>(<span class="title class_">String</span>.<span class="title function_">fromCharCode</span>(<span class="number">102</span>,<span class="number">117</span>,<span class="number">110</span>,<span class="number">99</span>,<span class="number">116</span>,<span class="number">105</span>,<span class="number">111</span>,<span class="number">110</span>,<span class="number">32</span>,<span class="number">99</span>,<span class="number">104</span>,<span class="number">101</span>,<span class="number">99</span>,<span class="number">107</span>,<span class="number">40</span>,<span class="number">41</span>,<span class="number">123</span>,<span class="number">13</span>,<span class="number">10</span>,<span class="number">09</span>,<span class="number">118</span>,<span class="number">97</span>,<span class="number">114</span>,<span class="number">32</span>,<span class="number">97</span>,<span class="number">32</span>,<span class="number">61</span>,<span class="number">32</span>,<span class="number">39</span>,<span class="number">100</span>,<span class="number">52</span>,<span class="number">103</span>,<span class="number">39</span>,<span class="number">59</span>,<span class="number">13</span>,<span class="number">10</span>,<span class="number">09</span>,<span class="number">105</span>,<span class="number">102</span>,<span class="number">40</span>,<span class="number">100</span>,<span class="number">111</span>,<span class="number">99</span>,<span class="number">117</span>,<span class="number">109</span>,<span class="number">101</span>,<span class="number">110</span>,<span class="number">116</span>,<span class="number">46</span>,<span class="number">103</span>,<span class="number">101</span>,<span class="number">116</span>,<span class="number">69</span>,<span class="number">108</span>,<span class="number">101</span>,<span class="number">109</span>,<span class="number">101</span>,<span class="number">110</span>,<span class="number">116</span>,<span class="number">66</span>,<span class="number">121</span>,<span class="number">73</span>,<span class="number">100</span>,<span class="number">40</span>,<span class="number">39</span>,<span class="number">116</span>,<span class="number">120</span>,<span class="number">116</span>,<span class="number">39</span>,<span class="number">41</span>,<span class="number">46</span>,<span class="number">118</span>,<span class="number">97</span>,<span class="number">108</span>,<span class="number">117</span>,<span class="number">101</span>,<span class="number">61</span>,<span class="number">61</span>,<span class="number">97</span>,<span class="number">41</span>,<span class="number">123</span>,<span class="number">13</span>,<span class="number">10</span>,<span class="number">09</span>,<span class="number">09</span>,<span class="number">119</span>,<span class="number">105</span>,<span class="number">110</span>,<span class="number">100</span>,<span class="number">111</span>,<span class="number">119</span>,<span class="number">46</span>,<span class="number">108</span>,<span class="number">111</span>,<span class="number">99</span>,<span class="number">97</span>,<span class="number">116</span>,<span class="number">105</span>,<span class="number">111</span>,<span class="number">110</span>,<span class="number">46</span>,<span class="number">104</span>,<span class="number">114</span>,<span class="number">101</span>,<span class="number">102</span>,<span class="number">61</span>,<span class="number">97</span>,<span class="number">43</span>,<span class="number">34</span>,<span class="number">46</span>,<span class="number">112</span>,<span class="number">104</span>,<span class="number">112</span>,<span class="number">34</span>,<span class="number">59</span>,<span class="number">13</span>,<span class="number">10</span>,<span class="number">09</span>,<span class="number">125</span>,<span class="number">101</span>,<span class="number">108</span>,<span class="number">115</span>,<span class="number">101</span>,<span class="number">123</span>,<span class="number">13</span>,<span class="number">10</span>,<span class="number">09</span>,<span class="number">09</span>,<span class="number">97</span>,<span class="number">108</span>,<span class="number">101</span>,<span class="number">114</span>,<span class="number">116</span>,<span class="number">40</span>,<span class="number">34</span>,<span class="number">23494</span>,<span class="number">30721</span>,<span class="number">38169</span>,<span class="number">35823</span>,<span class="number">34</span>,<span class="number">41</span>,<span class="number">59</span>,<span class="number">13</span>,<span class="number">10</span>,<span class="number">09</span>,<span class="number">125</span>,<span class="number">13</span>,<span class="number">10</span>,<span class="number">125</span>));</span><br><span class="line">&lt;/script&gt;</span><br></pre>
+
+<p>新时代无须解释，直接上chrome consle</p>
+<pre class="highlight"><span class="line"><span class="title class_">String</span>.<span class="title function_">fromCharCode</span>(<span class="number">102</span>,<span class="number">117</span>,<span class="number">110</span>,<span class="number">99</span>,<span class="number">116</span>,<span class="number">105</span>,<span class="number">111</span>,<span class="number">110</span>,<span class="number">32</span>,<span class="number">99</span>,<span class="number">104</span>,<span class="number">101</span>,<span class="number">99</span>,<span class="number">107</span>,<span class="number">40</span>,<span class="number">41</span>,<span class="number">123</span>,<span class="number">13</span>,<span class="number">10</span>,<span class="number">09</span>,<span class="number">118</span>,<span class="number">97</span>,<span class="number">114</span>,<span class="number">32</span>,<span class="number">97</span>,<span class="number">32</span>,<span class="number">61</span>,<span class="number">32</span>,<span class="number">39</span>,<span class="number">100</span>,<span class="number">52</span>,<span class="number">103</span>,<span class="number">39</span>,<span class="number">59</span>,<span class="number">13</span>,<span class="number">10</span>,<span class="number">09</span>,<span class="number">105</span>,<span class="number">102</span>,<span class="number">40</span>,<span class="number">100</span>,<span class="number">111</span>,<span class="number">99</span>,<span class="number">117</span>,<span class="number">109</span>,<span class="number">101</span>,<span class="number">110</span>,<span class="number">116</span>,<span class="number">46</span>,<span class="number">103</span>,<span class="number">101</span>,<span class="number">116</span>,<span class="number">69</span>,<span class="number">108</span>,<span class="number">101</span>,<span class="number">109</span>,<span class="number">101</span>,<span class="number">110</span>,<span class="number">116</span>,<span class="number">66</span>,<span class="number">121</span>,<span class="number">73</span>,<span class="number">100</span>,<span class="number">40</span>,<span class="number">39</span>,<span class="number">116</span>,<span class="number">120</span>,<span class="number">116</span>,<span class="number">39</span>,<span class="number">41</span>,<span class="number">46</span>,<span class="number">118</span>,<span class="number">97</span>,<span class="number">108</span>,<span class="number">117</span>,<span class="number">101</span>,<span class="number">61</span>,<span class="number">61</span>,<span class="number">97</span>,<span class="number">41</span>,<span class="number">123</span>,<span class="number">13</span>,<span class="number">10</span>,<span class="number">09</span>,<span class="number">09</span>,<span class="number">119</span>,<span class="number">105</span>,<span class="number">110</span>,<span class="number">100</span>,<span class="number">111</span>,<span class="number">119</span>,<span class="number">46</span>,<span class="number">108</span>,<span class="number">111</span>,<span class="number">99</span>,<span class="number">97</span>,<span class="number">116</span>,<span class="number">105</span>,<span class="number">111</span>,<span class="number">110</span>,<span class="number">46</span>,<span class="number">104</span>,<span class="number">114</span>,<span class="number">101</span>,<span class="number">102</span>,<span class="number">61</span>,<span class="number">97</span>,<span class="number">43</span>,<span class="number">34</span>,<span class="number">46</span>,<span class="number">112</span>,<span class="number">104</span>,<span class="number">112</span>,<span class="number">34</span>,<span class="number">59</span>,<span class="number">13</span>,<span class="number">10</span>,<span class="number">09</span>,<span class="number">125</span>,<span class="number">101</span>,<span class="number">108</span>,<span class="number">115</span>,<span class="number">101</span>,<span class="number">123</span>,<span class="number">13</span>,<span class="number">10</span>,<span class="number">09</span>,<span class="number">09</span>,<span class="number">97</span>,<span class="number">108</span>,<span class="number">101</span>,<span class="number">114</span>,<span class="number">116</span>,<span class="number">40</span>,<span class="number">34</span>,<span class="number">23494</span>,<span class="number">30721</span>,<span class="number">38169</span>,<span class="number">35823</span>,<span class="number">34</span>,<span class="number">41</span>,<span class="number">59</span>,<span class="number">13</span>,<span class="number">10</span>,<span class="number">09</span>,<span class="number">125</span>,<span class="number">13</span>,<span class="number">10</span>,<span class="number">125</span>)</span><br></pre>
+<p>输出为</p>
+<pre class="highlight"><span class="line"><span class="keyword">function</span> <span class="title function_">check</span>(<span class="params"></span>)&#123;</span><br><span class="line">	<span class="keyword">var</span> a = <span class="string">&#x27;d4g&#x27;</span>;</span><br><span class="line">	<span class="keyword">if</span>(<span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&#x27;txt&#x27;</span>).<span class="property">value</span>==a)&#123;</span><br><span class="line">		<span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span>=a+<span class="string">&quot;.php&quot;</span>;</span><br><span class="line">	&#125;<span class="keyword">else</span>&#123;</span><br><span class="line">		<span class="title function_">alert</span>(<span class="string">&quot;密码错误&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre>
+<p>好了我们知道了，密码是d4g，下一关！</p>
+<h1 id="第四关"><a href="#第四关" class="headerlink" title="第四关"></a>第四关</h1><p><a target="_blank" rel="noopener" href="http://monyer.com/game/game1/d4g.php">http://monyer.com/game/game1/d4g.php</a></p>
+<p>这一关非常猥琐，页面会自动跳转，稍有不注意，就跳走了。<br>打开后立即按esc停止。</p>
+<pre class="highlight"><span class="line">&lt;script type=<span class="string">&quot;text/rocketscript&quot;</span> data-rocketoptimized=<span class="string">&quot;true&quot;</span>&gt;</span><br><span class="line">    <span class="built_in">eval</span>(<span class="keyword">function</span>(<span class="params">p,a,c,k,e,d</span>)&#123;e=<span class="keyword">function</span>(<span class="params">c</span>)&#123;<span class="keyword">return</span> c.<span class="title function_">toString</span>(<span class="number">36</span>)&#125;;<span class="keyword">if</span>(!<span class="string">&#x27;&#x27;</span>.<span class="title function_">replace</span>(<span class="regexp">/^/</span>,<span class="title class_">String</span>))&#123;<span class="keyword">while</span>(c--)d[c.<span class="title function_">toString</span>(a)]=k[c]||c.<span class="title function_">toString</span>(a);k=[<span class="keyword">function</span>(<span class="params">e</span>)&#123;<span class="keyword">return</span> d[e]&#125;];e=<span class="keyword">function</span>(<span class="params"></span>)&#123;<span class="keyword">return</span><span class="string">&#x27;\\w+&#x27;</span>&#125;;c=<span class="number">1</span>&#125;;<span class="keyword">while</span>(c--)<span class="keyword">if</span>(k[c])p=p.<span class="title function_">replace</span>(<span class="keyword">new</span> <span class="title class_">RegExp</span>(<span class="string">&#x27;\\b&#x27;</span>+<span class="title function_">e</span>(c)+<span class="string">&#x27;\\b&#x27;</span>,<span class="string">&#x27;g&#x27;</span>),k[c]);<span class="keyword">return</span> p&#125;(<span class="string">&#x27;a=&quot;e&quot;;d c()&#123;b(9.8(\&#x27;7\&#x27;).6==a)&#123;5.4.3=a+&quot;.2&quot;&#125;1&#123;0(&quot;密码错误&quot;)&#125;&#125;&#x27;</span>,<span class="number">15</span>,<span class="number">15</span>,<span class="string">&#x27;alert|else|php|href|location|window|value|txt|getElementById|document||if|check|function|3bhe&#x27;</span>.<span class="title function_">split</span>(<span class="string">&#x27;|&#x27;</span>),<span class="number">0</span>,&#123;&#125;))</span><br><span class="line">&lt;/script&gt;</span><br></pre>
+
+<p>显然这是一个加密的js，我们需要解密，上解密工具：</p>
+<p><a target="_blank" rel="noopener" href="http://tool.lu/js/">http://tool.lu/js/</a></p>
+<p>解密后：</p>
+<pre class="highlight"><span class="line">a = <span class="string">&quot;3bhe&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">check</span>(<span class="params"></span>) &#123;</span><br><span class="line">	<span class="keyword">if</span> (<span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&#x27;txt&#x27;</span>).<span class="property">value</span> == a) &#123;</span><br><span class="line">		<span class="variable language_">window</span>.<span class="property">location</span>.<span class="property">href</span> = a + <span class="string">&quot;.php&quot;</span></span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="title function_">alert</span>(<span class="string">&quot;密码错误&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre>
+<p>密码是 3bhe 下一关</p>
+<p>诶？怎么不对？仔细检查源代码发现下面还有一行</p>
+<pre class="highlight"><span class="line"><span class="built_in">eval</span>(<span class="string">&quot;\141\75\141\56\164\157\125\160\160\145\162\103\141\163\145\50\51\53\61\73&quot;</span>);</span><br></pre>
+<p>解密！</p>
+<pre class="highlight"><span class="line">a = a.<span class="title function_">toUpperCase</span>() + <span class="number">1</span>;</span><br></pre>
+<p>.toUpperCase()是转换大写，所以密码是 3BHE1 下一关 go</p>
+<h1 id="第五关"><a href="#第五关" class="headerlink" title="第五关"></a>第五关</h1><p><a target="_blank" rel="noopener" href="http://monyer.com/game/game1/3BHE1.php">http://monyer.com/game/game1/3BHE1.php</a></p>
+<blockquote>
+<p>密码在哪儿？额，我藏在页面里了哦！</p>
+</blockquote>
+<p>这题的难点在于 找到不密码藏在哪里了 搜索了个遍 就是找不到密码 看看http头呢？</p>
+<p>找到了，在cookie里</p>
+<pre class="highlight"><span class="line">monyer:the password for the next level is asdf</span><br></pre>
+
+<p>下一关！</p>
+<h1 id="第六关"><a href="#第六关" class="headerlink" title="第六关"></a>第六关</h1><p><a target="_blank" rel="noopener" href="http://monyer.com/game/game1/asdf.php">http://monyer.com/game/game1/asdf.php</a></p>
+<p>是个线索题目</p>
+<p>Get the latest fashion, beauty, dating, and health tips. Plus, win freebies, take quizzes, and check your daily horoscope! Girl Games - 9000+ Free Games for Girls …</p>
+<p>真蛋疼<br>把这个线索在网上一搜 第一个已经是一个结题方案了，看来monyer的游戏已经成功干过一个网站了。</p>
+<p>这个答案是；seventeen</p>
+<h1 id="第七关"><a href="#第七关" class="headerlink" title="第七关"></a>第七关</h1><p><a target="_blank" rel="noopener" href="http://monyer.com/game/game1/seventeen7.php">http://monyer.com/game/game1/seventeen7.php</a></p>
+<p>社工题</p>
+<p>先解密md5吧</p>
+<p>5e023995fb3f5e840ee684784f8f0799</p>
+<p><a target="_blank" rel="noopener" href="http://www.somd5.com/">http://www.somd5.com/</a></p>
+<p>解密出  eighteen8</p>
+<p>下一关</p>
+<h1 id="第八关"><a href="#第八关" class="headerlink" title="第八关"></a>第八关</h1><p><a target="_blank" rel="noopener" href="http://monyer.com/game/game1/eighteen8.php">http://monyer.com/game/game1/eighteen8.php</a></p>
+<p>直接看到 一个404 不要着急 审查工具</p>
+<pre class="highlight"><span class="line">&lt;p style=&quot;display:none&quot;&gt;</span><br><span class="line">第8关</span><br><span class="line">朋友您好，第8关欢迎您！</span><br><span class="line">我对您的聪明才智感到惊讶！</span><br><span class="line">相信我，现在世界上85%以上的人都在你之下，</span><br><span class="line">所以你可以大步向前，义无反顾地进行你的事业了。</span><br><span class="line">因为只要你肯努力，不畏惧挫折，这个世界上没有难倒你的事。</span><br><span class="line">那么继续我们的约定，我将告诉你第9关的入口：</span><br><span class="line">10000以内所有质数和.php</span><br><span class="line">&lt;/p&gt;</span><br></pre>
+<p>10000以内所有质数和，so easy！写个javascript 算一下。</p>
+<pre class="highlight"><span class="line">var sum = 0;</span><br><span class="line">for (var i = 2; i &lt; 10000; i++) &#123;</span><br><span class="line">	var flag = true;</span><br><span class="line">	for (var j = 2; j &lt;= Math.sqrt(i); j++) &#123;</span><br><span class="line">		if (i % j == 0) flag = false ;</span><br><span class="line">	&#125;</span><br><span class="line">    if(flag) &#123;sum = sum + i;&#125;</span><br><span class="line">&#125;</span><br><span class="line">console.log(sum);</span><br><span class="line"></span><br><span class="line">5736396</span><br></pre>
+<p>下一关</p>
+<h1 id="第九关"><a href="#第九关" class="headerlink" title="第九关"></a>第九关</h1><p><a target="_blank" rel="noopener" href="http://monyer.com/game/game1/5736396.php">http://monyer.com/game/game1/5736396.php</a></p>
+<p>在命令行里输入：</p>
+<pre class="highlight"><span class="line">wget http://monyer.com/game/game1/img/4681851790659554.jpg</span><br><span class="line">cat 4681851790659554.jpg</span><br></pre>
+<p>密码藏在图片里</p>
+<pre class="highlight"><span class="line">���^�v��*&#123;I�z��^�iؾSRW�V�6�Z��(����H�����ٹ�����</span><br><span class="line">�Ǿ���ʽ�ʲô���ţ�</span><br><span class="line">�ԣ�������������������......��</span><br><span class="line">��ϲ�㣡</span><br><span class="line">��ʮ������Ϊ��MonyerLikeYou_the10level</span><br><span class="line">�����ڿ�ʼ�漰������Ķ�̬���������㶼���԰���ʾ������ɵģ�</span><br><span class="line">�����Լ���û��ģ�%</span><br></pre>
+<p>MonyerLikeYou_the10level</p>
+<h1 id="第十关"><a href="#第十关" class="headerlink" title="第十关"></a>第十关</h1><p><a target="_blank" rel="noopener" href="http://monyer.com/game/game1/MonyerLikeYou_the10level.php">http://monyer.com/game/game1/MonyerLikeYou_the10level.php</a></p>
+<blockquote>
+<p>当前用户身份为simpleuser 不是admin，无法显示下一关密码</p>
+</blockquote>
+<p>很显然这是一道session/cookie欺骗题</p>
+<p>在console里直接输入</p>
+<pre class="highlight"><span class="line">document.cookie=&quot;username=admin&quot;</span><br></pre>
+
+<p>刷新</p>
+<blockquote>
+<p>好聪明哦！下一关密码为：doyouknow</p>
+</blockquote>
+<p>下一关！</p>
+<h1 id="第十一关"><a href="#第十一关" class="headerlink" title="第十一关"></a>第十一关</h1><p><a target="_blank" rel="noopener" href="http://monyer.com/game/game1/doyouknow.php?action=show_login_false">http://monyer.com/game/game1/doyouknow.php?action=show_login_false</a></p>
+<blockquote>
+<p>你的session不是passer，不能查看下一关密码</p>
+</blockquote>
+<p>在console里直接输入</p>
+<pre class="highlight"><span class="line">document.cookie=&quot;username=passer&quot;</span><br></pre>
+
+<p>刷新，好像不对哦，monyer骗我，哼！</p>
+<p>再看标题 action=show_login_false </p>
+<p><a target="_blank" rel="noopener" href="http://monyer.com/game/game1/doyouknow.php?action=show_login_true">http://monyer.com/game/game1/doyouknow.php?action=show_login_true</a></p>
+<blockquote>
+<p>您的session为passer，所以您可以查看下一关密码：smartboy</p>
+</blockquote>
+<p>下一关！</p>
+<h1 id="第十二关"><a href="#第十二关" class="headerlink" title="第十二关"></a>第十二关</h1><p><a target="_blank" rel="noopener" href="http://monyer.com/game/game1/smartboy.php">http://monyer.com/game/game1/smartboy.php</a></p>
+<pre class="highlight"><span class="line">JTRBJTU0JTYzJTdBJTRBJTU0JTVBJTQ3JTRBJTU0JTU5JTc5JTRBJTU0JTU5JTMxJTRBJTU0JTU5JTc4JTRBJTU0JTYzJTMxJTRBJTU0JTYzJTMwJTRBJTU0JTU5JTM1JTRBJTU0JTU5JTMyJTRBJTU0JTYzJTMxJTRBJTU0JTVBJTQ0JTRBJTU0JTRBJTQ2JTRBJTU0JTYzJTc3JTRBJTU0JTU5JTM0JTRBJTU0JTYzJTc3</span><br></pre>
+<p>直觉告诉我，这显然是Base64 解密</p>
+<pre class="highlight"><span class="line">%4A%54%63%7A%4A%54%5A%47%4A%54%59%79%4A%54%59%31%4A%54%59%78%4A%54%63%31%4A%54%63%30%4A%54%59%35%4A%54%59%32%4A%54%63%31%4A%54%5A%44%4A%54%4A%46%4A%54%63%77%4A%54%59%34%4A%54%63%77</span><br></pre>
+<p>直觉告诉我，这显然是 UrlEncode 解密</p>
+<p>JTczJTZGJTYyJTY1JTYxJTc1JTc0JTY5JTY2JTc1JTZDJTJFJTcwJTY4JTcw</p>
+<p>直觉再次告诉我，这显然是 Base64 解密</p>
+<p>%73%6F%62%65%61%75%74%69%66%75%6C%2E%70%68%70</p>
+<p>直觉再次告诉我，这显然是  UrlEncode 解密</p>
+<p>sobeautiful.php</p>
+<p>不错 密码就是sobeautiful</p>
+<h1 id="第十三关"><a href="#第十三关" class="headerlink" title="第十三关"></a>第十三关</h1><p><a target="_blank" rel="noopener" href="http://monyer.com/game/game1/sobeautiful.php">http://monyer.com/game/game1/sobeautiful.php</a></p>
+<blockquote>
+<p>本页禁止盗链！</p>
+</blockquote>
+<p>wtf..显然他判断了http来源，需要伪造http referer，那么我们在之前的第十二关的审查代码中加入：</p>
+<pre class="highlight"><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>= <span class="string">&quot;http://monyer.com/game/game1/sobeautiful.php&quot;</span>&gt;</span> 简便伪造referer<span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br></pre>
+<blockquote>
+<p>欢迎您来到第13关</p>
+<p>请输入密码进入第14关：</p>
+<p>没有输入密码 或 密码错误 或 系统错误！</p>
+</blockquote>
+<p>看源代码有post提交</p>
+<p>这是一道SQL 注入题</p>
+<p>试试我大万能密码！ </p>
+<pre class="highlight"><span class="line">&#x27; or 1=1 </span><br></pre>
+<p>万能密码熟记于心</p>
+<blockquote>
+<p>下一关密码：whatyouneverknow</p>
+</blockquote>
+<p>下一关！</p>
+<h1 id="第十四关"><a href="#第十四关" class="headerlink" title="第十四关"></a>第十四关</h1><p><a target="_blank" rel="noopener" href="http://monyer.com/game/game1/whatyouneverknow.php">http://monyer.com/game/game1/whatyouneverknow.php</a></p>
+<p>感谢@Echowxsy提供第14关解密过程</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/monyerhack/01.jpg" class="lozad post-image"src="/content/images/monyerhack/01.jpg"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/monyerhack/02.jpg" class="lozad post-image"src="/content/images/monyerhack/02.jpg"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/monyerhack/03.jpg" class="lozad post-image"src="/content/images/monyerhack/03.jpg"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/monyerhack/1.jpg" class="lozad post-image"src="/content/images/monyerhack/1.jpg"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/monyerhack/2.jpg" class="lozad post-image"src="/content/images/monyerhack/2.jpg"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/monyerhack/3.jpg" class="lozad post-image"src="/content/images/monyerhack/3.jpg"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/monyerhack/5.jpg" class="lozad post-image"src="/content/images/monyerhack/5.jpg"></p>
+<h1 id="第十五关"><a href="#第十五关" class="headerlink" title="第十五关"></a>第十五关</h1><p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/monyerhack/4.png" class="lozad post-image"src="/content/images/monyerhack/4.png"></p>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  <div class="nav-item-prev">
+    <a href="/2016/11/26/TOR暗网的秘密/" class="nav-link">
+      <i class="iconfont icon-left nav-prev-icon"></i>
+      <div>
+        <div class="nav-label">上一篇</div>
+        
+        <div class="nav-title">TOR暗网的秘密 </div>
+        
+      </div>
+    </a>
+  </div>
+  
+  
+  <div class="nav-item-next">
+    <a href="/2016/11/22/在Docker下的Ubuntu安装Sql-Server-for-Linux/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">Docker下配置SQL Server for Linux </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E9%9B%B6%E5%85%B3"><span class="toc-text">第零关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E5%85%B3"><span class="toc-text">第一关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E5%85%B3"><span class="toc-text">第二关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E5%85%B3"><span class="toc-text">第三关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%9B%9B%E5%85%B3"><span class="toc-text">第四关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%BA%94%E5%85%B3"><span class="toc-text">第五关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%85%AD%E5%85%B3"><span class="toc-text">第六关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%83%E5%85%B3"><span class="toc-text">第七关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%85%AB%E5%85%B3"><span class="toc-text">第八关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B9%9D%E5%85%B3"><span class="toc-text">第九关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E5%85%B3"><span class="toc-text">第十关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E4%B8%80%E5%85%B3"><span class="toc-text">第十一关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E4%BA%8C%E5%85%B3"><span class="toc-text">第十二关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E4%B8%89%E5%85%B3"><span class="toc-text">第十三关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E5%9B%9B%E5%85%B3"><span class="toc-text">第十四关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E4%BA%94%E5%85%B3"><span class="toc-text">第十五关</span></a></li></ol>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>72</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>26</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>26</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E9%9B%B6%E5%85%B3"><span class="toc-text">第零关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E5%85%B3"><span class="toc-text">第一关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E5%85%B3"><span class="toc-text">第二关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E5%85%B3"><span class="toc-text">第三关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%9B%9B%E5%85%B3"><span class="toc-text">第四关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%BA%94%E5%85%B3"><span class="toc-text">第五关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%85%AD%E5%85%B3"><span class="toc-text">第六关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%83%E5%85%B3"><span class="toc-text">第七关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%85%AB%E5%85%B3"><span class="toc-text">第八关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B9%9D%E5%85%B3"><span class="toc-text">第九关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E5%85%B3"><span class="toc-text">第十关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E4%B8%80%E5%85%B3"><span class="toc-text">第十一关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E4%BA%8C%E5%85%B3"><span class="toc-text">第十二关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E4%B8%89%E5%85%B3"><span class="toc-text">第十三关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E5%9B%9B%E5%85%B3"><span class="toc-text">第十四关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E4%BA%94%E5%85%B3"><span class="toc-text">第十五关</span></a></li></ol>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/traefik/" title="traefik"><div class="tags-list-item">traefik</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+    <a href="/tags/RaspberryPi/" title="RaspberryPi"><div class="tags-list-item">RaspberryPi</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E9%9B%B6%E5%85%B3"><span class="toc-text">第零关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E5%85%B3"><span class="toc-text">第一关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E5%85%B3"><span class="toc-text">第二关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E5%85%B3"><span class="toc-text">第三关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%9B%9B%E5%85%B3"><span class="toc-text">第四关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%BA%94%E5%85%B3"><span class="toc-text">第五关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%85%AD%E5%85%B3"><span class="toc-text">第六关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%83%E5%85%B3"><span class="toc-text">第七关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%85%AB%E5%85%B3"><span class="toc-text">第八关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B9%9D%E5%85%B3"><span class="toc-text">第九关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E5%85%B3"><span class="toc-text">第十关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E4%B8%80%E5%85%B3"><span class="toc-text">第十一关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E4%BA%8C%E5%85%B3"><span class="toc-text">第十二关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E4%B8%89%E5%85%B3"><span class="toc-text">第十三关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E5%9B%9B%E5%85%B3"><span class="toc-text">第十四关</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E5%8D%81%E4%BA%94%E5%85%B3"><span class="toc-text">第十五关</span></a></li></ol>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-19</div>
+        <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/"><div class="recent-posts-item-content">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-10</div>
+        <a href="/2021/03/10/Traefik 2 群晖硬核指南/"><div class="recent-posts-item-content">Traefik 2 群晖硬核指南</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-02-26</div>
+        <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Big Sur 黑苹果安装教程</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2024
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>

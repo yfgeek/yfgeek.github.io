@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>Raspberry Pi Zero联网奇妙记</title>
+  
+  
+  <meta property="og:title" content="Raspberry Pi Zero联网奇妙记">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2016/12/21/Rasberry-Pi-Zero-%E8%81%94%E7%BD%91%E5%A5%87%E5%A6%99%E8%AE%B0/index.html">
+  
+  
+  <meta property="og:img" content="/content/images/blog/me.jpg">
+  
+  
+  <meta property="og:img" content="Thinking as a Geek">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2016-12-21">
+  <meta property="og:article:modified_time" content="2024-05-15">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="Raspberry">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      Raspberry Pi Zero联网奇妙记
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2016-12-21T15:01:26.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2016-12-21</span>
+    </time>
+    
+    <span class="dot"></span>
+    
+    <a href="/categories/Rasberry/" class="post-meta-link">Rasberry</a>
+    
+    
+    
+    <span class="dot"></span>
+    <span>1.4k 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/Raspberry/" class="post-meta-link">Raspberry</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <p>说句实话，Zero真的不适合把玩，想让他连上网，太难了。</p>
+<h1 id="痛点"><a href="#痛点" class="headerlink" title="痛点"></a>痛点</h1><ul>
+<li>住公寓，有WiFi/Lan登录认证系统</li>
+<li>公寓的网络动态分配范围很大，很难快速找到树莓派的IP</li>
+<li>公寓的网络防止扫描端口，有惩罚策略</li>
+<li>没有显示器 无法查看树莓派Zero的状态</li>
+<li>树莓派Zero只有一个OTG USB接口</li>
+<li>树莓派Zero没有内置以太网Lan</li>
+<li>树莓派Zero没有无线网卡WiFi</li>
+<li>树莓派Zero没有蓝牙 更没有蓝牙局域网</li>
+<li>树莓派Zero除了核心部分 一无所有</li>
+</ul>
+<h1 id="已有装备"><a href="#已有装备" class="headerlink" title="已有装备"></a>已有装备</h1><ul>
+<li>树莓派Zero</li>
+<li>USB HUB 分线器</li>
+<li>USB 以太网网卡</li>
+<li>USB WIFI (芯片 8188EU)</li>
+<li>路由器</li>
+<li>网线一根</li>
+<li>MacBook Pro一台</li>
+</ul>
+<h1 id="已有环境"><a href="#已有环境" class="headerlink" title="已有环境"></a>已有环境</h1><ul>
+<li>Raspbian系统</li>
+<li>vncserver</li>
+</ul>
+<h1 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h1><h2 id="整体思路"><a href="#整体思路" class="headerlink" title="整体思路"></a>整体思路</h2><p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/zeronet/0.png" class="lozad post-image"src="/content/images/zeronet/0.png"></p>
+<p>其中 USB HUB USB网卡 临时路由器 PC 是临时之用 配置一旦完成 抛弃这些设备直接插上WiFi自动联网。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/zeronet/1.jpg" class="lozad post-image"src="/content/images/zeronet/1.jpg"></p>
+<h2 id="去掉之前的USB网卡模式"><a href="#去掉之前的USB网卡模式" class="headerlink" title="去掉之前的USB网卡模式"></a>去掉之前的USB网卡模式</h2><p>把sd卡取出，插入电脑</p>
+<p>在<code>config.txt</code>下删除</p>
+<pre class="highlight"><span class="line">dtoverlay=dwc2</span><br></pre>
+<p>在<code>cmdline.txt</code>下删除</p>
+<pre class="highlight"><span class="line">modules-load=dwc2,g_ether</span><br></pre>
+
+<h2 id="安装WiFi驱动"><a href="#安装WiFi驱动" class="headerlink" title="安装WiFi驱动"></a>安装WiFi驱动</h2><p>之前遇到过很多坑，比如别的内核的WiFi驱动。</p>
+<p>首先手动下载</p>
+<p><a target="_blank" rel="noopener" href="https://dl.dropboxusercontent.com/u/80256631/install-wifi.tar.gz">https://dl.dropboxusercontent.com/u/80256631/install-wifi.tar.gz</a></p>
+<p>检查无线适配器版本，同时传到树莓派上</p>
+<pre class="highlight"><span class="line">pi@zero:~ $ sudo ./install-wifi</span><br><span class="line"></span><br><span class="line">Your current kernel revision = 4.4.34+</span><br><span class="line">Your current kernel build    = <span class="comment">#930</span></span><br><span class="line"></span><br><span class="line">Checking <span class="keyword">for</span> a wifi module to determine the driver to install.</span><br><span class="line"></span><br><span class="line">Your wifi module is Bus 001 Device 003: ID 0bda:8179 Realtek Semiconductor Corp.</span><br><span class="line"></span><br><span class="line">And it uses the 8188eu driver.</span><br><span class="line"></span><br><span class="line">Checking <span class="keyword">for</span> a new 8188eu wifi driver module <span class="keyword">for</span> your current kernel.</span><br><span class="line">The script cannot access Dropbox to check a driver is available.</span><br></pre>
+<p>手动下载<br><a target="_blank" rel="noopener" href="https://dl.dropboxusercontent.com/u/80256631/8188eu-4.4.34-930.tar.gz">https://dl.dropboxusercontent.com/u/80256631/8188eu-4.4.34-930.tar.gz</a></p>
+<p>切换WiFi到树莓派网络</p>
+<pre class="highlight"><span class="line">scp 8188eu-4.4.34-930.tar.gz pi@zero.local:~</span><br></pre>
+<p>在树莓派下</p>
+<pre class="highlight"><span class="line">tar xzf  8188eu-4.4.34-930.tar.gz</span><br><span class="line">sudo ./install.sh</span><br><span class="line">reboot</span><br></pre>
+<p>然后检查一下 <code>lsusb</code>(这个其实不靠谱) </p>
+<p>然后再检查一下 <code>ifconfig</code></p>
+<pre class="highlight"><span class="line">wlan0     Link encap:Ethernet  HWaddr 0c:82:68:12:93:8f</span><br><span class="line">          inet6 addr: fe80::4336:2657:c812:f11b/64 Scope:Link</span><br><span class="line">          UP BROADCAST MULTICAST  MTU:1500  Metric:1</span><br><span class="line">          RX packets:0 errors:0 dropped:6 overruns:0 frame:0</span><br><span class="line">          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0</span><br><span class="line">          collisions:0 txqueuelen:1000</span><br><span class="line">          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)</span><br></pre>
+<p>果然正确安装了。</p>
+<h2 id="配置WiFi"><a href="#配置WiFi" class="headerlink" title="配置WiFi"></a>配置WiFi</h2><p>但是<code>wlan0     Link encap:Ethernet</code>被识别为了以太网，接下来我们继续解决坑。</p>
+<pre class="highlight"><span class="line">sudo iwlist wlan0 scan</span><br></pre>
+
+<pre class="highlight"><span class="line">Cell 03 - Address: F0:B0:52:3B:7B:68</span><br><span class="line">                  ESSID:<span class="string">&quot;ASK4 Wireless&quot;</span></span><br><span class="line">                  Protocol:IEEE 802.11gn</span><br><span class="line">                  Mode:Master</span><br><span class="line">                  Frequency:2.417 GHz (Channel 2)</span><br><span class="line">                  Encryption key:off</span><br><span class="line">                  Bit Rates:144 Mb/s</span><br><span class="line">                  Quality=18/100  Signal level=70/100</span><br><span class="line">                  Extra:fm=0001</span><br></pre>
+<p>随后对<code>wpa_supplicant.conf</code>文件进行编辑，使之加入到自己的网络里。</p>
+<p>请注意，<code>key_mgmt=NONE</code>表示没有WiFi密码(这是个查了很久猜得到的宝贵线索)，如果有密码请把这个更改为<code>psk = &quot;密码&quot; </code></p>
+<pre class="highlight"><span class="line">sudo vi /etc/wpa_supplicant/wpa_supplicant.conf</span><br></pre>
+
+<pre class="highlight"><span class="line">country=GB</span><br><span class="line">ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev</span><br><span class="line">update_config=1</span><br><span class="line">network=&#123;</span><br><span class="line">        ssid=<span class="string">&quot;ASK4 Wireless&quot;</span></span><br><span class="line">        key_mgmt=NONE</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre>
+<p>编辑<code>/etc/network/interfaces</code>文件，使wlan0为动态分配获取IP。</p>
+<pre class="highlight"><span class="line">sudo vi /etc/network/interfaces</span><br></pre>
+<pre class="highlight"><span class="line">auto lo</span><br><span class="line">iface lo inet loopback</span><br><span class="line"></span><br><span class="line">iface eth0 inet dhcp</span><br><span class="line"></span><br><span class="line">auto wlan0</span><br><span class="line">allow-hotplug wlan0</span><br><span class="line">iface wlan0 inet dhcp</span><br><span class="line">wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">allow-hotplug wlan1</span><br><span class="line">iface wlan1 inet manual</span><br><span class="line">    wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf</span><br></pre>
+
+<p>随后重启我们wlan0</p>
+<pre class="highlight"><span class="line">sudo ifdown wlan0</span><br><span class="line">sudo ifup wlan0</span><br></pre>
+
+<p>如果能搜索到WiFi会自动进行DHCP获取ip地址阶段</p>
+<pre class="highlight"><span class="line">Listening on LPF/wlan0/0c:82:68:12:93:8f</span><br><span class="line">Sending on   LPF/wlan0/0c:82:68:12:93:8f</span><br><span class="line">Sending on   Socket/fallback</span><br><span class="line">DHCPDISCOVER on wlan0 to 255.255.255.255 port 67 interval 8</span><br><span class="line">DHCPDISCOVER on wlan0 to 255.255.255.255 port 67 interval 12</span><br><span class="line">DHCPREQUEST on wlan0 to 255.255.255.255 port 67</span><br><span class="line">DHCPOFFER from 10.80.192.1</span><br><span class="line">DHCPACK from 10.80.192.1</span><br><span class="line">bound to 10.80.200.83 -- renewal <span class="keyword">in</span> 440 seconds.</span><br></pre>
+<p>随后，用<code>ifconfig</code>命令查看一下获取的IP地址</p>
+<pre class="highlight"><span class="line">wlan0     Link encap:Ethernet  HWaddr 0c:82:68:12:93:8f</span><br><span class="line">          inet addr:10.80.200.83  Bcast:10.80.207.255  Mask:255.255.240.0</span><br><span class="line">          UP BROADCAST MULTICAST  MTU:1500  Metric:1</span><br><span class="line">          RX packets:0 errors:0 dropped:17 overruns:0 frame:0</span><br><span class="line">          TX packets:0 errors:0 dropped:1 overruns:0 carrier:0</span><br><span class="line">          collisions:0 txqueuelen:1000</span><br><span class="line">          RX bytes:4681 (4.5 KiB)  TX bytes:18372 (17.9 KiB)</span><br></pre>
+
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/zeronet/3.png" class="lozad post-image"src="/content/images/zeronet/3.png"></p>
+<p>再对mac地址进行绑定，再进入vnc，试试看</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/zeronet/4.jpg" class="lozad post-image"src="/content/images/zeronet/4.jpg"></p>
+<p>哇 可以上网了！</p>
+<p>然而悲痛的消息还有呢~</p>
+<p>内网隔离</p>
+<h2 id="ngrok-TCP转发"><a href="#ngrok-TCP转发" class="headerlink" title="ngrok TCP转发"></a>ngrok TCP转发</h2><p>这难不倒我，用ngrok就可以解决，正好身在墙外，更加方便。</p>
+<p>下载ngrok</p>
+<pre class="highlight"><span class="line">wget https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-arm.zip</span><br><span class="line">unzip ngrok-stable-linux-arm.zip</span><br></pre>
+<p>配置开机启动项<code>vi /etc/rc.local</code><br>在exit 0 前面加入</p>
+<pre class="highlight"><span class="line">/home/pi/ngrok authtoken 你的AUTO</span><br><span class="line">/home/pi/ngrok tcp 22</span><br></pre>
+<p>搞定！拔掉USB HUB，关掉路由器，重启！</p>
+<p>过了10分钟后，我们的树莓派上线了！</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/zeronet/5.png" class="lozad post-image"src="/content/images/zeronet/5.png"></p>
+<p>用ssh命令连接一下</p>
+<pre class="highlight"><span class="line">ssh pi@0.tcp.ngrok.io -p 13016</span><br></pre>
+<p>连接速度超级快，如同本地一样，给ngrok官网点赞。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/zeronet/6.jpg" class="lozad post-image"src="/content/images/zeronet/6.jpg"></p>
+<h2 id="lighttpd-部署"><a href="#lighttpd-部署" class="headerlink" title="lighttpd 部署"></a>lighttpd 部署</h2><p>总要搞点事情嘛，部署一个Web服务对于512MB的内存的树莓派Zero不过分吧。</p>
+<p>那么什么Web服务最合适呢？脑海第一时间想到轻量级的lighttpd，ngnix我都嫌弃费资源，那么就它了。</p>
+<pre class="highlight"><span class="line">sudo apt-get install -y lighttpd</span><br></pre>
+
+<p>安装完成！目录在<code>/var/www/html</code></p>
+<p>写好html，部署上去。</p>
+<p>那么如何才能办到同时映射到两个端口呢？ngrok的官方文档有提示。</p>
+<p><code>nano /home/pi/.ngrok2/ngrok.yml</code></p>
+<pre class="highlight"><span class="line">authtoken: 你的AUTH</span><br><span class="line">region: eu</span><br><span class="line">json_resolver_url: &quot;&quot;</span><br><span class="line">dns_resolver_ips: []</span><br><span class="line"></span><br><span class="line">tunnels:</span><br><span class="line">  app-foo:</span><br><span class="line">    addr: 80</span><br><span class="line">    proto: http</span><br><span class="line">    host_header: app-foo.dev</span><br><span class="line">  app-bar:</span><br><span class="line">    addr: 22</span><br><span class="line">    proto: tcp</span><br><span class="line">    host_header: app-bar.dev</span><br><span class="line"></span><br></pre>
+<p>这样就部署了两个服务，<code>app-foo</code>，<code>app-bar</code>，不错，开机再启动他们。</p>
+<pre class="highlight"><span class="line">sudo nano /etc/rc.local</span><br></pre>
+<p>把之前那句换成</p>
+<pre class="highlight"><span class="line">/home/pi/proj/ngrok/ngrok start --config /home/pi/.ngrok2/ngrok.yml app-foo app-bar</span><br></pre>
+<p>好了，剩下我们要做的就是重启与等待。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/zeronet/7.jpg" class="lozad post-image"src="/content/images/zeronet/7.jpg"></p>
+<p>哈哈，上线了，访问一下。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/zeronet/8.png" class="lozad post-image"src="/content/images/zeronet/8.png"></p>
+<p>这个只有4英镑的树莓派实现联网后花费了：</p>
+<p>树莓派：4磅</p>
+<p>OTG线：0.86磅</p>
+<p>WIFI适配器：人民币25元</p>
+<p>储存卡：9磅</p>
+<p>谢谢<del>观看</del>忍耐全文。</p>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  <div class="nav-item-prev">
+    <a href="/2016/12/27/Emoji表情域名-引领未来/" class="nav-link">
+      <i class="iconfont icon-left nav-prev-icon"></i>
+      <div>
+        <div class="nav-label">上一篇</div>
+        
+        <div class="nav-title">Emoji 表情域名 引领未来 </div>
+        
+      </div>
+    </a>
+  </div>
+  
+  
+  <div class="nav-item-next">
+    <a href="/2016/12/21/WAT-搞笑吐槽JavaScript/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">Wat 吐槽JavaScript </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%97%9B%E7%82%B9"><span class="toc-text">痛点</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B7%B2%E6%9C%89%E8%A3%85%E5%A4%87"><span class="toc-text">已有装备</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B7%B2%E6%9C%89%E7%8E%AF%E5%A2%83"><span class="toc-text">已有环境</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="toc-text">解决方案</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%B4%E4%BD%93%E6%80%9D%E8%B7%AF"><span class="toc-text">整体思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8E%BB%E6%8E%89%E4%B9%8B%E5%89%8D%E7%9A%84USB%E7%BD%91%E5%8D%A1%E6%A8%A1%E5%BC%8F"><span class="toc-text">去掉之前的USB网卡模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85WiFi%E9%A9%B1%E5%8A%A8"><span class="toc-text">安装WiFi驱动</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AEWiFi"><span class="toc-text">配置WiFi</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ngrok-TCP%E8%BD%AC%E5%8F%91"><span class="toc-text">ngrok TCP转发</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#lighttpd-%E9%83%A8%E7%BD%B2"><span class="toc-text">lighttpd 部署</span></a></li></ol></li></ol>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>72</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>26</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>26</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%97%9B%E7%82%B9"><span class="toc-text">痛点</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B7%B2%E6%9C%89%E8%A3%85%E5%A4%87"><span class="toc-text">已有装备</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B7%B2%E6%9C%89%E7%8E%AF%E5%A2%83"><span class="toc-text">已有环境</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="toc-text">解决方案</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%B4%E4%BD%93%E6%80%9D%E8%B7%AF"><span class="toc-text">整体思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8E%BB%E6%8E%89%E4%B9%8B%E5%89%8D%E7%9A%84USB%E7%BD%91%E5%8D%A1%E6%A8%A1%E5%BC%8F"><span class="toc-text">去掉之前的USB网卡模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85WiFi%E9%A9%B1%E5%8A%A8"><span class="toc-text">安装WiFi驱动</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AEWiFi"><span class="toc-text">配置WiFi</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ngrok-TCP%E8%BD%AC%E5%8F%91"><span class="toc-text">ngrok TCP转发</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#lighttpd-%E9%83%A8%E7%BD%B2"><span class="toc-text">lighttpd 部署</span></a></li></ol></li></ol>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/traefik/" title="traefik"><div class="tags-list-item">traefik</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+    <a href="/tags/RaspberryPi/" title="RaspberryPi"><div class="tags-list-item">RaspberryPi</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%97%9B%E7%82%B9"><span class="toc-text">痛点</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B7%B2%E6%9C%89%E8%A3%85%E5%A4%87"><span class="toc-text">已有装备</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B7%B2%E6%9C%89%E7%8E%AF%E5%A2%83"><span class="toc-text">已有环境</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="toc-text">解决方案</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%B4%E4%BD%93%E6%80%9D%E8%B7%AF"><span class="toc-text">整体思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8E%BB%E6%8E%89%E4%B9%8B%E5%89%8D%E7%9A%84USB%E7%BD%91%E5%8D%A1%E6%A8%A1%E5%BC%8F"><span class="toc-text">去掉之前的USB网卡模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85WiFi%E9%A9%B1%E5%8A%A8"><span class="toc-text">安装WiFi驱动</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AEWiFi"><span class="toc-text">配置WiFi</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ngrok-TCP%E8%BD%AC%E5%8F%91"><span class="toc-text">ngrok TCP转发</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#lighttpd-%E9%83%A8%E7%BD%B2"><span class="toc-text">lighttpd 部署</span></a></li></ol></li></ol>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-19</div>
+        <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/"><div class="recent-posts-item-content">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-10</div>
+        <a href="/2021/03/10/Traefik 2 群晖硬核指南/"><div class="recent-posts-item-content">Traefik 2 群晖硬核指南</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-02-26</div>
+        <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Big Sur 黑苹果安装教程</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2024
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>

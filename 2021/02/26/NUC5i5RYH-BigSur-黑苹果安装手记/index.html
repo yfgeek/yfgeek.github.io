@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>NUC5i5RYH Big Sur 黑苹果安装教程</title>
+  
+  
+  <meta property="og:title" content="NUC5i5RYH Big Sur 黑苹果安装教程">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2021/02/26/NUC5i5RYH-BigSur-%E9%BB%91%E8%8B%B9%E6%9E%9C%E5%AE%89%E8%A3%85%E6%89%8B%E8%AE%B0/index.html">
+  
+  
+  <meta property="og:img" content="/banners/bigsurnuc.png">
+  
+  
+  <meta property="og:img" content="Thinking as a Geek">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2021-02-26">
+  <meta property="og:article:modified_time" content="2024-05-15">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="Mac">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<div class="image-wrapper">
+  <img src="/banners/bigsurnuc.png" data-src="/banners/bigsurnuc.png"
+    srcset="data:image/svg+xml,%3Csvg%20xmlns=&#39;http://www.w3.org/2000/svg&#39;%20viewBox=&#39;0%200%20300%20300&#39;%3E%3C/svg%3E"
+    class="image lozad"
+    alt="thumbnail"
+  >
+</div>
+
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      NUC5i5RYH Big Sur 黑苹果安装教程
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2021-02-26T10:16:30.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2021-02-26</span>
+    </time>
+    
+    <span class="dot"></span>
+    
+    <a href="/categories/Mac/" class="post-meta-link">Mac</a>
+    
+    
+    
+    <span class="dot"></span>
+    <span>1.1k 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/Mac/" class="post-meta-link">Mac</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <blockquote>
+<p>本文内容仅供学习，需要十分清楚的是黑苹果其实是一个具有潜在盗版性质的行为，因为它违反了 EULA 法案(EULA)。 所以本教程只是以安装黑苹果为一个引线，进而介绍和分享关于苹果操作系统的相关知识和系统的一些安装方法，不参与任何商业活动，也不允许任何人使用本文章搜集和创作的资料参与任何商业活动。如果你想要开始黑苹果技术，我们希望你是抱着一个极客的心态来的，并且将这些技术应用到其他相关领域的学习和工作中去。</p>
+</blockquote>
+<p>2021年年度更新Big Sur版本，本次版本更换Clover到OpenCore，对如下内容进行更新。</p>
+<p>本人全部过程参考以下教程，为减少您的坑，我已经把我调教好的配置文件和驱动上传至GitHub。</p>
+<h1 id="效果图"><a href="#效果图" class="headerlink" title="效果图"></a>效果图</h1><p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/bigsur/snap.jpg" class="lozad post-image"src="/content/images/bigsur/snap.jpg"></p>
+<ul>
+<li>Display Port 完美 (4K)</li>
+<li>HDMI 完美</li>
+<li>音频输出 完美</li>
+<li>睿频 完美</li>
+<li>休眠 完美</li>
+<li>USB3.0 完美</li>
+<li>WIFi 完美</li>
+<li>蓝牙 完美</li>
+</ul>
+<h1 id="材料"><a href="#材料" class="headerlink" title="材料"></a>材料</h1><ul>
+<li>至少8GB U盘一枚</li>
+<li><a target="_blank" rel="noopener" href="https://blog.daliansky.net/macOS-BigSur-11.2.1-20D75-Release-version-with-OC-0.6.6-and-Clover-5129-and-PE-original-image.html">macOS Big Sur Installer 镜像</a></li>
+<li>本机硬盘 GPT分区 至少预留一个空分区 如果全盘安装，请将硬盘清空</li>
+<li><a href="%5Bhttp://www.pc6.com/softview/SoftView_91686.html%5D(http://www.pc6.com/softview/SoftView_91686.html)">TransMac(dmg文件打开工具)</a></li>
+<li>DiskGenius</li>
+<li>一个winpe盘(用于处理紧急情况，可选，也可以使用备用电脑)</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/yfgeek/NUC5i5RYH-DSDT-Patch/tree/master/BigSur%20OpenCore">为您调教的NUC5i5RYH专用配置文件</a></li>
+</ul>
+<h1 id="准备安装U盘"><a href="#准备安装U盘" class="headerlink" title="准备安装U盘"></a>准备安装U盘</h1><p>确保上述到位后，使用TransMac打开下载好的dmg文件。具体操作步骤如下：</p>
+<ol>
+<li>把 U 盘插入电脑，然后再打开之前安装好的 TransMac 软件，找到窗口左侧中出现的U盘；</li>
+<li>将 U 盘格式为 Mac 系统下的磁盘格式，选中 U 盘并右键选择“Format Disk for Mac”选项，保持默认的 Mac OS Extended HFS+ 即可；</li>
+<li>随后软件会提示我们是否要将此 U 盘格式为 Mac 磁盘格式，点击 OK 按钮继续。接着请等待软件将 U 盘格式为 Mac 磁盘格式；</li>
+<li>当 U 盘被格式化完成以后，选中 U 盘并点击右键选择“Restore with Disk image”选项，选择了一个 Mac OS的Mac系统镜像；</li>
+<li>此时软件会提示我们 U 盘上数据将会被清除，点击“Yes”按钮继续。等待软件将 Mac 系统的镜像恢复到 U 盘里。</li>
+<li>当出现“Restore Complete”的时候就代表MacOS的U盘启动盘制作完成了。</li>
+</ol>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/hackintosh/1.gif" class="lozad post-image"src="/content/images/hackintosh/1.gif"></p>
+<p>刻录好后，别急，使用DiskGenuis打开U盘刻录好的EFI分区，打开<a target="_blank" rel="noopener" href="https://github.com/yfgeek/NUC5i5RYH-DSDT-Patch/tree/master/BigSur%20OpenCore">为您调教的NUC5i5RYH专用配置文件</a>，将EFI目录下的目录替换EFI分区内的目录。</p>
+<p>大功告成，重启。</p>
+<h1 id="进入安装阶段"><a href="#进入安装阶段" class="headerlink" title="进入安装阶段"></a>进入安装阶段</h1><p> 开机，F2进入BIOS，设置如下</p>
+<ul>
+<li><p>Devices-&gt;Onboard Devices-&gt;Legacy Device Configuration,  “Serial Port”  设置为 disabled</p>
+</li>
+<li><p>Boot-&gt;Boot Configuration,  “Network Boot” 设置为 disabled</p>
+</li>
+<li><p>Power-&gt;Secondary Power Settings, “Wake on LAN from S4/S5”, 设置为 “Stay Off”</p>
+</li>
+<li><p>Devices-&gt;USB, “xHCI Mode” 设置为 “Smart Auto”</p>
+</li>
+<li><p>Devices-&gt;Video, “IGD Minimum Memory” 设置为 64mb</p>
+</li>
+<li><p>Devices-&gt;Video, “IGD Aperture Size” 设置为 256mb</p>
+</li>
+<li><p>Boot-&gt;Secure Boot, “Secure Boot” 设置为 disabled</p>
+</li>
+<li><p>Security-&gt;Security Features, “Execute Disable Bit” 设置为 enabled</p>
+</li>
+</ul>
+<p>开机，按选择U盘启动，进入Clover界面，选择优盘启动。</p>
+<p>稍等片刻，即可进入安装界面。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/hackintosh/3.jpg" class="lozad post-image"src="/content/images/hackintosh/3.jpg"></p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/hackintosh/5.jpg" class="lozad post-image"src="/content/images/hackintosh/5.jpg"></p>
+<p>选择磁盘工具，选择要安装的磁盘，将其格式化为APFS文件系统。</p>
+<p>随后的事情就很简单了，顺序安装软件即可。</p>
+<h1 id="第一次重启"><a href="#第一次重启" class="headerlink" title="第一次重启"></a>第一次重启</h1><p>进度条走完后，会自动重启，此时非常重要，重启后一定要选择macOS install</p>
+<p>然后进入</p>
+<h1 id="第二次重启"><a href="#第二次重启" class="headerlink" title="第二次重启"></a>第二次重启</h1><p>重启后选择<strong>Boot macOS from 硬盘名</strong>，本次重启会像安装iOS一样，走黑苹果下的进度条，走完即可。耐心等待。</p>
+<h1 id="进入桌面"><a href="#进入桌面" class="headerlink" title="进入桌面"></a>进入桌面</h1><p>不出意外的话，就能进入正常的macOS第一次安装后的桌面，进入常规设置后。</p>
+<p>安装<a target="_blank" rel="noopener" href="https://gitee.com/shuiyunxc/OpenCore">OpenCore Configurator</a>，便于后续维护，同时挂载EFI 分区。</p>
+<pre class="highlight"><span class="line"><span class="comment"># 一、进入Single User模式：</span></span><br><span class="line"></span><br><span class="line">sudo -s</span><br><span class="line"></span><br><span class="line"><span class="comment"># 二、在Volumes下创建EFI文件夹：</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">mkdir</span> /Volumes/EFI</span><br><span class="line"></span><br><span class="line"><span class="comment"># 三、确定分区：</span></span><br><span class="line"></span><br><span class="line">diskutil list</span><br><span class="line"></span><br><span class="line"><span class="comment"># 一般的EFI分区会在disk0s1，</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 四、挂载分区：</span></span><br><span class="line"></span><br><span class="line">mount -t msdos /dev/disk0s1 /Volumes/EFI</span><br><span class="line"></span><br><span class="line"><span class="comment"># 五、如果使用结束卸载分区：</span></span><br><span class="line"></span><br><span class="line">diskutil unmount /dev/disk0s1</span><br></pre>
+
+<p>打开之前<a target="_blank" rel="noopener" href="https://github.com/yfgeek/NUC5i5RYH-DSDT-Patch/tree/master/BigSur%20OpenCore">为您调教的NUC5i5RYH专用配置文件</a>，将EFI目录下的目录替换加载好的EFI分区内的目录。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/bigsur/snap.jpg" class="lozad post-image"src="/content/images/bigsur/snap.jpg"></p>
+<p>重启，大功告成！</p>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  <div class="nav-item-prev">
+    <a href="/2021/03/10/Traefik 2 群晖硬核指南/" class="nav-link">
+      <i class="iconfont icon-left nav-prev-icon"></i>
+      <div>
+        <div class="nav-label">上一篇</div>
+        
+        <div class="nav-title">Traefik 2 群晖硬核指南 </div>
+        
+      </div>
+    </a>
+  </div>
+  
+  
+  <div class="nav-item-next">
+    <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">走进流式付款的世界 Sablier 源码解读 </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%88%E6%9E%9C%E5%9B%BE"><span class="toc-text">效果图</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9D%90%E6%96%99"><span class="toc-text">材料</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%87%86%E5%A4%87%E5%AE%89%E8%A3%85U%E7%9B%98"><span class="toc-text">准备安装U盘</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%BF%9B%E5%85%A5%E5%AE%89%E8%A3%85%E9%98%B6%E6%AE%B5"><span class="toc-text">进入安装阶段</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E6%AC%A1%E9%87%8D%E5%90%AF"><span class="toc-text">第一次重启</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E6%AC%A1%E9%87%8D%E5%90%AF"><span class="toc-text">第二次重启</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%BF%9B%E5%85%A5%E6%A1%8C%E9%9D%A2"><span class="toc-text">进入桌面</span></a></li></ol>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>72</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>26</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>26</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%88%E6%9E%9C%E5%9B%BE"><span class="toc-text">效果图</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9D%90%E6%96%99"><span class="toc-text">材料</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%87%86%E5%A4%87%E5%AE%89%E8%A3%85U%E7%9B%98"><span class="toc-text">准备安装U盘</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%BF%9B%E5%85%A5%E5%AE%89%E8%A3%85%E9%98%B6%E6%AE%B5"><span class="toc-text">进入安装阶段</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E6%AC%A1%E9%87%8D%E5%90%AF"><span class="toc-text">第一次重启</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E6%AC%A1%E9%87%8D%E5%90%AF"><span class="toc-text">第二次重启</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%BF%9B%E5%85%A5%E6%A1%8C%E9%9D%A2"><span class="toc-text">进入桌面</span></a></li></ol>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/traefik/" title="traefik"><div class="tags-list-item">traefik</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+    <a href="/tags/RaspberryPi/" title="RaspberryPi"><div class="tags-list-item">RaspberryPi</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%88%E6%9E%9C%E5%9B%BE"><span class="toc-text">效果图</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9D%90%E6%96%99"><span class="toc-text">材料</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%87%86%E5%A4%87%E5%AE%89%E8%A3%85U%E7%9B%98"><span class="toc-text">准备安装U盘</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%BF%9B%E5%85%A5%E5%AE%89%E8%A3%85%E9%98%B6%E6%AE%B5"><span class="toc-text">进入安装阶段</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E6%AC%A1%E9%87%8D%E5%90%AF"><span class="toc-text">第一次重启</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E6%AC%A1%E9%87%8D%E5%90%AF"><span class="toc-text">第二次重启</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%BF%9B%E5%85%A5%E6%A1%8C%E9%9D%A2"><span class="toc-text">进入桌面</span></a></li></ol>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-19</div>
+        <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/"><div class="recent-posts-item-content">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-10</div>
+        <a href="/2021/03/10/Traefik 2 群晖硬核指南/"><div class="recent-posts-item-content">Traefik 2 群晖硬核指南</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-02-26</div>
+        <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Big Sur 黑苹果安装教程</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2024
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>

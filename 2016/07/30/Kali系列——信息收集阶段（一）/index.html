@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>Kali系列——信息收集阶段（一）</title>
+  
+  
+  <meta property="og:title" content="Kali系列——信息收集阶段（一）">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2016/07/30/Kali%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86%E9%98%B6%E6%AE%B5%EF%BC%88%E4%B8%80%EF%BC%89/index.html">
+  
+  
+  <meta property="og:img" content="/content/images/blog/me.jpg">
+  
+  
+  <meta property="og:img" content="&lt;p&gt;记得前几周去参加过一个阿里巴巴举办的安全峰会，其中一个大牛讲到以前的渗透测试三字经，当场真是笑出声：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;进谷歌 找注入 没注入 就旁注 没旁注 用0day 没0day 猜目录 没目录 就嗅探&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;blockquote&gt;
+&lt;p&gt;爆账户 找后台 传小马 放大马 拿权限 挂页面  放暗连 清数据 拿不下 去自杀 死不了 继续来 查资料 去社工！&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;其实，我觉得渗透测试无论怎么变，不外乎这几点：&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;信息收集阶段-&amp;gt;漏洞检测阶段-&amp;gt;漏洞利用阶段-&amp;gt;持久化后门阶段&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;最近借了本好书《高度安全环境下的高级渗透测试》，这本书内容浅显易懂，但却很实用，虽然很多内容都知道，但是不成系统，这本书总结工作做得非常好，总结一下读书笔记。&lt;/p&gt;">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2016-07-30">
+  <meta property="og:article:modified_time" content="2016-08-05">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="Hack">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      Kali系列——信息收集阶段（一）
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2016-07-30T09:48:20.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2016-07-30</span>
+    </time>
+    
+    
+    <span class="dot"></span>
+    <span>944 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/Hack/" class="post-meta-link">Hack</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <p>记得前几周去参加过一个阿里巴巴举办的安全峰会，其中一个大牛讲到以前的渗透测试三字经，当场真是笑出声：</p>
+<blockquote>
+<p>进谷歌 找注入 没注入 就旁注 没旁注 用0day 没0day 猜目录 没目录 就嗅探</p>
+</blockquote>
+<blockquote>
+<p>爆账户 找后台 传小马 放大马 拿权限 挂页面  放暗连 清数据 拿不下 去自杀 死不了 继续来 查资料 去社工！</p>
+</blockquote>
+<p>其实，我觉得渗透测试无论怎么变，不外乎这几点：</p>
+<blockquote>
+<p>信息收集阶段-&gt;漏洞检测阶段-&gt;漏洞利用阶段-&gt;持久化后门阶段</p>
+</blockquote>
+<p>最近借了本好书《高度安全环境下的高级渗透测试》，这本书内容浅显易懂，但却很实用，虽然很多内容都知道，但是不成系统，这本书总结工作做得非常好，总结一下读书笔记。</p>
+<span id="more"></span> 
+<h1 id="信息收集阶段"><a href="#信息收集阶段" class="headerlink" title="信息收集阶段"></a>信息收集阶段</h1><h2 id="DNS信息"><a href="#DNS信息" class="headerlink" title="DNS信息"></a>DNS信息</h2><p>其实DNS信息收集阶段用两个Linux系统自带工具即可完成。</p>
+<h3 id="nslookup"><a href="#nslookup" class="headerlink" title="nslookup"></a>nslookup</h3><p>此命令，可以快速查处ip地址</p>
+<pre class="highlight"><span class="line"> ✘ ivan@Ivan~ nslookup zhihu.com</span><br><span class="line">Server:		114.114.114.114</span><br><span class="line">Address:	114.114.114.114<span class="comment">#53</span></span><br><span class="line"></span><br><span class="line">Non-authoritative answer:</span><br><span class="line">Name:	zhihu.com</span><br><span class="line">Address: 54.223.189.245</span><br></pre>
+
+<p>当然也可以指定dns查询服务器：</p>
+<pre class="highlight"><span class="line">ivan@Ivan ~ nslookup -<span class="built_in">type</span>=ns zhihu.com 8.8.8.8</span><br><span class="line">Server:		8.8.8.8</span><br><span class="line">Address:	8.8.8.8<span class="comment">#53</span></span><br><span class="line"></span><br><span class="line">Non-authoritative answer:</span><br><span class="line">zhihu.com	nameserver = ns3.dnsv4.com.</span><br><span class="line">zhihu.com	nameserver = ns4.dnsv4.com.</span><br><span class="line"></span><br><span class="line">Authoritative answers can be found from:</span><br></pre>
+<h3 id="dig"><a href="#dig" class="headerlink" title="dig"></a>dig</h3><p>dig真是个好工具，甚至可以找出DNS域传送漏洞。下面举一个例子，也是乌云网曝光过的，由于篇幅问题，精简了很多内容：</p>
+<pre class="highlight"><span class="line">ivan@Ivan  ~  dig @dns.csust.edu.cn csust.edu.cn axfr</span><br><span class="line"></span><br><span class="line">; &lt;&lt;&gt;&gt; DiG 9.8.3-P1 &lt;&lt;&gt;&gt; @dns.csust.edu.cn csust.edu.cn axfr</span><br><span class="line">; (1 server found)</span><br><span class="line">;; global options: +cmd</span><br><span class="line">csust.edu.cn.		86400	IN	SOA	dns.csust.edu.cn. root.localhost.csust.edu.cn. 20160725 28800 7200 604800 86400</span><br><span class="line">csust.edu.cn.		86400	IN	NS	dns.csust.edu.cn.</span><br><span class="line">csust.edu.cn.		86400	IN	NS	dns2.csust.edu.cn.</span><br><span class="line">csust.edu.cn.		86400	IN	A	113.240.233.146</span><br><span class="line">csust.edu.cn.		86400	IN	A	210.43.192.8</span><br><span class="line">csust.edu.cn.		86400	IN	A	210.43.192.18</span><br><span class="line">csust.edu.cn.		86400	IN	MX	5 mxbiz1.qq.com.</span><br><span class="line">csust.edu.cn.		86400	IN	MX	10 mxbiz2.qq.com.</span><br><span class="line">csust.edu.cn.		86400	IN	AAAA	2001:da8:d002::d22b:c008</span><br><span class="line">3g.csust.edu.cn.	86400	IN	A	113.240.233.6</span><br><span class="line">app.csust.edu.cn.	86400	IN	A	113.240.233.11</span><br><span class="line">app7.csust.edu.cn.	86400	IN	A	222.240.152.227</span><br><span class="line">app8.csust.edu.cn.	86400	IN	A	113.240.233.8</span><br><span class="line">archives.csust.edu.cn.	86400	IN	A	222.240.152.232</span><br><span class="line">bid.csust.edu.cn.	86400	IN	CNAME	jtcloud.csust.edu.cn.</span><br><span class="line">bw.csust.edu.cn.	86400	IN	A	10.255.194.20</span><br><span class="line">cas.csust.edu.cn.	86400	IN	A	210.43.198.1</span><br><span class="line">cslgqkzx.csust.edu.cn.	86400	IN	A	210.43.188.80</span><br><span class="line">cslgxbsk.csust.edu.cn.	86400	IN	CNAME	cslgqkzx.csust.edu.cn.</span><br><span class="line">cslgxbzk.csust.edu.cn.	86400	IN	CNAME	cslgqkzx.csust.edu.cn.</span><br><span class="line">cwcx.csust.edu.cn.	86400	IN	A	10.22.14.252</span><br><span class="line">cxlt.csust.edu.cn.	86400	IN	A	222.240.152.203</span><br><span class="line">dkxnsyzx.csust.edu.cn.	86400	IN	A	222.240.152.200</span><br><span class="line">dlkjxb.csust.edu.cn.	86400	IN	CNAME	cslgqkzx.csust.edu.cn.</span><br><span class="line">dns.csust.edu.cn.	86400	IN	A	210.43.192.8</span><br><span class="line">csust.edu.cn.		86400	IN	SOA	dns.csust.edu.cn. root.localhost.csust.edu.cn. 20160725 28800 7200 604800 86400</span><br><span class="line">;; Query time: 62 msec</span><br><span class="line">;; SERVER: 210.43.192.8<span class="comment">#53(210.43.192.8)</span></span><br><span class="line">;; WHEN: Sat Jul 30 20:18:47 2016</span><br><span class="line">;; XFR size: 112 records (messages 1, bytes 2369)</span><br></pre>
+<p>可以看到，各种信息，从A、cname到MX全部暴露无遗。<br>如果不存在该漏洞则会被服务器拒绝查询请求。</p>
+<pre class="highlight"><span class="line">ivan@Ivan ~ dig @dns4.tju.edu.cn tju.edu.cn axfr</span><br><span class="line">; &lt;&lt;&gt;&gt; DiG 9.8.3-P1 &lt;&lt;&gt;&gt; @dns4.tju.edu.cn tju.edu.cn axfr</span><br><span class="line">; (1 server found)</span><br><span class="line">;; global options: +cmd</span><br><span class="line">; Transfer failed.</span><br></pre>
+
+<h3 id="whois"><a href="#whois" class="headerlink" title="whois"></a>whois</h3><p>whois查询，不多解释了</p>
+<pre class="highlight"><span class="line">ivan@Ivan ~ whois yfgeek.com</span><br><span class="line"></span><br><span class="line">Whois Server Version 2.0</span><br><span class="line"></span><br><span class="line">Domain names <span class="keyword">in</span> the .com and .net domains can now be registered</span><br><span class="line">with many different competing registrars. Go to http://www.internic.net</span><br><span class="line"><span class="keyword">for</span> detailed information.</span><br><span class="line"></span><br><span class="line">   Domain Name: YFGEEK.COM</span><br><span class="line">   Registrar: GODADDY.COM, LLC</span><br><span class="line">   Sponsoring Registrar IANA ID: 146</span><br><span class="line">   Whois Server: whois.godaddy.com</span><br><span class="line">   Referral URL: http://www.godaddy.com</span><br><span class="line">   Name Server: F1G1NS1.DNSPOD.NET</span><br><span class="line">   Name Server: F1G1NS2.DNSPOD.NET</span><br><span class="line">   Status: clientDeleteProhibited https://icann.org/epp<span class="comment">#clientDeleteProhibited</span></span><br><span class="line">   Status: clientRenewProhibited https://icann.org/epp<span class="comment">#clientRenewProhibited</span></span><br><span class="line">   Status: clientTransferProhibited https://icann.org/epp<span class="comment">#clientTransferProhibited</span></span><br><span class="line">   Status: clientUpdateProhibited https://icann.org/epp<span class="comment">#clientUpdateProhibited</span></span><br><span class="line">   Updated Date: 21-apr-2016</span><br><span class="line">   Creation Date: 23-nov-2012</span><br><span class="line">   Expiration Date: 23-nov-2017</span><br><span class="line"></span><br></pre>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  <div class="nav-item-prev">
+    <a href="/2016/08/01/Kali系列——信息收集阶段（二）/" class="nav-link">
+      <i class="iconfont icon-left nav-prev-icon"></i>
+      <div>
+        <div class="nav-label">上一篇</div>
+        
+        <div class="nav-title">Kali系列——信息收集阶段（二） </div>
+        
+      </div>
+    </a>
+  </div>
+  
+  
+  <div class="nav-item-next">
+    <a href="/2016/07/29/Emacs-命令大全/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">Emacs 命令大全 </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86%E9%98%B6%E6%AE%B5"><span class="toc-text">信息收集阶段</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#DNS%E4%BF%A1%E6%81%AF"><span class="toc-text">DNS信息</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#nslookup"><span class="toc-text">nslookup</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#dig"><span class="toc-text">dig</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#whois"><span class="toc-text">whois</span></a></li></ol></li></ol></li></ol>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>72</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>26</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>26</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86%E9%98%B6%E6%AE%B5"><span class="toc-text">信息收集阶段</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#DNS%E4%BF%A1%E6%81%AF"><span class="toc-text">DNS信息</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#nslookup"><span class="toc-text">nslookup</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#dig"><span class="toc-text">dig</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#whois"><span class="toc-text">whois</span></a></li></ol></li></ol></li></ol>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/traefik/" title="traefik"><div class="tags-list-item">traefik</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+    <a href="/tags/RaspberryPi/" title="RaspberryPi"><div class="tags-list-item">RaspberryPi</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BF%A1%E6%81%AF%E6%94%B6%E9%9B%86%E9%98%B6%E6%AE%B5"><span class="toc-text">信息收集阶段</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#DNS%E4%BF%A1%E6%81%AF"><span class="toc-text">DNS信息</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#nslookup"><span class="toc-text">nslookup</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#dig"><span class="toc-text">dig</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#whois"><span class="toc-text">whois</span></a></li></ol></li></ol></li></ol>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-19</div>
+        <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/"><div class="recent-posts-item-content">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-10</div>
+        <a href="/2021/03/10/Traefik 2 群晖硬核指南/"><div class="recent-posts-item-content">Traefik 2 群晖硬核指南</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-02-26</div>
+        <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Big Sur 黑苹果安装教程</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2024
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>

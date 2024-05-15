@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>我眼中的React</title>
+  
+  
+  <meta property="og:title" content="我眼中的React">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2017/02/04/%E6%88%91%E7%9C%BC%E4%B8%AD%E7%9A%84React/index.html">
+  
+  
+  <meta property="og:img" content="/content/images/blog/me.jpg">
+  
+  
+  <meta property="og:img" content="Thinking as a Geek">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2017-02-04">
+  <meta property="og:article:modified_time" content="2024-05-15">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="Web">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      我眼中的React
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2017-02-04T06:35:03.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2017-02-04</span>
+    </time>
+    
+    <span class="dot"></span>
+    
+    <a href="/categories/Web/" class="post-meta-link">Web</a>
+    
+    
+    
+    <span class="dot"></span>
+    <span>2.9k 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/Web/" class="post-meta-link">Web</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <p>前两天，用React把 之前的 <a target="_blank" rel="noopener" href="https://github.com/yfgeek/rpi-TempRuntime">基于树莓派3B,DHT11/DHT22,LCD1602的一个实时温度湿度检测系统</a> 的Web部分重构了一下。</p>
+<p>这个项目之前是用Semantic UI + eCharts + JQuery Datapicker写的，由于这个项目的实现过程比较经典，几乎把所有的感觉React的基础思想都实现了一遍。</p>
+<p>无疑，React给前端带来了各种新的想法与思想，声明式、虚拟Dom、单向数据流、JSX、组件化、Flux、以JavaScript为中心、React Native。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/react/0.png" class="lozad post-image"src="/content/images/react/0.png"></p>
+<h1 id="虚拟Dom"><a href="#虚拟Dom" class="headerlink" title="虚拟Dom"></a>虚拟Dom</h1><p>React是以JS为中心的，而非HTML，虚拟Dom是一个至关重要的概念。</p>
+<p>在jQuery出现之前，我们一般都是直接操作Dom，方法“暴力、简单”，也存在兼容性的问题。在jQuery出现之后，jQuery的选择器帮助我们简单、高效的操作Dom，也就是在jQuery出现之后，前端就开始大爆发了。</p>
+<p>但是随着发展，这种简单暴力的操作Dom的方法对于很多大型系统性工程来说，从软件工程的角度上讲，是杂乱、无序的，一旦时间久远，项目越来越大，维护成本就变大。于是，我们有了各种前端MVC、MVVM框架，典型的有Angular、React、vue.js，MVVM给我们带来一种全新的思想，数据绑定。</p>
+<p>不过，与此同时，React给我们带来了一种全新的思想，虚拟Dom，从此，我们再也不用直接操作Dom了，而是用虚拟Dom更新Dom。</p>
+<p>你可能会问，这样做，效率岂不是更低了？</p>
+<p>是的，也不是。其实没有那么明显，一般来讲，操作Dom树的Diff算法应该是O(n^3)，而React把效率降低到了O(n)。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/react/1.png" class="lozad post-image"src="/content/images/react/1.png"></p>
+<p>简单来讲，如图所示，React只会比较相同层级的Dom，从而简化了Dom Diff的复杂度，虽然有所舍弃，但是全局比较是没有必要的。</p>
+<p>通过在JSX文件中写虚拟Dom，React在内存中会自动拿现在的虚拟Dom和旧的虚拟Dom进行Diff操作，如果发现有Diff的部分，就拿出来形成新的Patch部分，加入到现在的Dom树上。</p>
+<p>也就是因为这个原因，虚拟Dom使得在操作Dom上更加高效，每次更新数据不会进行O(n^3)复杂的操作。</p>
+<p>你可能会问，什么是JSX？</p>
+<h1 id="JSX"><a href="#JSX" class="headerlink" title="JSX"></a>JSX</h1><p>其实JSX只是一种未编译的JavaScript，可以方便的对HTML进行书写，先上代码：</p>
+<pre class="highlight"><span class="line"><span class="keyword">import</span> <span class="title class_">React</span> <span class="keyword">from</span> <span class="string">&#x27;react&#x27;</span>;</span><br><span class="line"><span class="keyword">import</span> &#123; <span class="title class_">Button</span> &#125; <span class="keyword">from</span> <span class="string">&#x27;semantic-ui-react&#x27;</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">ButtonComponent</span> <span class="keyword">extends</span> <span class="title class_ inherited__">React.Component</span> &#123;</span><br><span class="line">    <span class="title function_">render</span>(<span class="params"></span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>(</span><br><span class="line">            <span class="language-xml"><span class="tag">&lt;<span class="name">span</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">            <span class="tag">&lt;<span class="name">Button</span> <span class="attr">color</span>=<span class="string">&#x27;blue&#x27;</span> &gt;</span>分钟<span class="tag">&lt;/<span class="name">Button</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">            <span class="tag">&lt;<span class="name">Button</span> <span class="attr">color</span>=<span class="string">&#x27;violet&#x27;</span>&gt;</span>小时<span class="tag">&lt;/<span class="name">Button</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">            <span class="tag">&lt;/<span class="name">span</span>&gt;</span></span></span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> <span class="title class_">ButtonComponent</span>;</span><br></pre>
+<p>代码部分用<code>ES6</code>书写，你可能会问什么是ES6？其实还有ES7(ECMAScript 2016)呢~</p>
+<p>那么，你可能看到了很变态的写法，就是HTML和JS混写，没错，这就是EJS，但请注意，这不是HTML，写着写着很有可能会掉入<a target="_blank" rel="noopener" href="http://www.css88.com/react/docs/jsx-gotchas.html">JSX陷阱</a>。</p>
+<p>经过<code>babel</code>等工具的编译后，JSX在运行的时候会被编译为真实的JavaScript语言，之所以这样写，只是为了方便程序员更方便的写代码。</p>
+<p>比如上面的代码“HTML部分”会被编译为：</p>
+<pre class="highlight"><span class="line"><span class="title class_">React</span>.<span class="title function_">createElement</span>(<span class="string">&#x27;button&#x27;</span>, &#123;<span class="attr">class</span>: <span class="string">&#x27;ui blue button&#x27;</span>&#125;, <span class="string">&#x27;分钟&#x27;</span>);</span><br><span class="line"><span class="title class_">React</span>.<span class="title function_">createElement</span>(<span class="string">&#x27;button&#x27;</span>, &#123;<span class="attr">class</span>: <span class="string">&#x27;ui violet button&#x27;</span>&#125;, <span class="string">&#x27;小时&#x27;</span>);</span><br></pre>
+
+<p>当然，JSX也有很多坑，比如：</p>
+<p><code>Module build failed: SyntaxError: Adjacent JSX elements must be wrapped in an enclosing tag</code></p>
+<p>作为新手，这个问题，我经常遇到，因为你在写每一个JSX模块的时候，你需要用类似于<code>&lt;div&gt;&lt;/div&gt;</code>作为开始与结尾，不规范的代码不会被编译成功。</p>
+<h1 id="ECMAScript-ES"><a href="#ECMAScript-ES" class="headerlink" title="ECMAScript(ES)"></a>ECMAScript(ES)</h1><p>ES无疑是这几年最火的前端语言，没错，他是JavaScript的改进版，我知道，其实还有很多其他类似的比如CoffeeScript，但是ES会被各大浏览器所兼容支持，但是你可能会问到兼容性问题，没事，我们有<code>babel</code>工具。</p>
+<ul>
+<li>ECMAScript：一个由 ECMA International 进行标准化，TC39 委员会进行监督的语言。通常用于指代标准本身。</li>
+<li>JavaScript：ECMAScript 标准的各种实现的最常用称呼。这个术语并不局限于某个特定版本的 ECMAScript 规范，并且可能被用于任何不同程度的任意版本的 ECMAScript 的实现。</li>
+<li>ECMAScript 5 (ES5)：ECMAScript 的第五版修订，于 2009 年完成标准化。这个规范在所有现代浏览器中都相当完全的实现了。</li>
+<li>ECMAScript 6 (ES6) / ECMAScript 2015 (ES2015)：ECMAScript 的第六版修订，于 2015 年完成标准化。这个标准被部分实现于大部分现代浏览器。可以查阅这张兼容性表来查看不同浏览器和工具的实现情况。</li>
+<li>ECMAScript Proposals：被考虑加入未来版本 ECMAScript 标准的特性与语法提案，他们需要经历五个阶段：Strawman（稻草人），Proposal（提议），Draft（草案），Candidate（候选）以及 Finished （完成）。</li>
+<li>ECMAScript 2016：第七版 ECMAScript 修订，增加了两个新特性。</li>
+</ul>
+<p>以上，都是我们常说的ES，在网上看到的代码目前以ES5和ES6居多，写法各异，我建议用最新版的写法写代码。</p>
+<p>说白了，就是Javascript并不是一个优秀的语言，但是经过不断的填补，修正，已经让Javascript支持了很多新特性，新的语法，更多的书写方式，以及拥有了更严谨的编程思想。比如<code>let</code>,arrow function(就是这个：<code>(i) =&gt; i + 1</code> )在ES中的运用等。</p>
+<p>所以，在认识React之前，最好学习ES的新特性以及<a target="_blank" rel="noopener" href="http://blog.csdn.net/zhangjjie0110/article/details/53782537">常用的新特性</a>。</p>
+<h1 id="组件化"><a href="#组件化" class="headerlink" title="组件化"></a>组件化</h1><p>我觉得这是React的重量级思想，组件化前端，从此，前端再也不是东拼西凑，而是像积木一样，拼起来。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/react/2.png" class="lozad post-image"src="/content/images/react/2.png"></p>
+<p>React把单一的用户界面，拆成了各种各样的组件，形成“组件树”，采用分而治之的思想，有一个好处，就是维护起来极其方便，对于组件的修改也显得很容易。</p>
+<h1 id="数据绑定"><a href="#数据绑定" class="headerlink" title="数据绑定"></a>数据绑定</h1><p>众所周知，Angular是双向数据绑定的，并且引以为豪，因为更容易维护与理解。</p>
+<p>但是双向数据绑定也带来了许多问题，会在些其他功能的时候莫名其妙出现很多bug。</p>
+<p>React是单向数据绑定的，是非常稳定的做法，但是也存在一些问题，就是在操作其他组件的时候，对于数据流的处理，显得异常困难。</p>
+<p>在React中，数据绑定仅仅需要在<code>render</code>中写<code>&#123;数据绑定&#125;</code>，而非像Angular一样，两边都要设置，一定情况下讲，这是比较方便的。</p>
+<h1 id="数据模型"><a href="#数据模型" class="headerlink" title="数据模型"></a>数据模型</h1><h2 id="state"><a href="#state" class="headerlink" title="state"></a>state</h2><p>话说回来，React的每一个组件的实质是什么？状态机（State Machines），在React的每一个组件里，通过更新<code>this.state</code>，再通过<code>render()</code>进行渲染，React会自动把最新的状态渲染到网页上。</p>
+<p>举个栗子🌰</p>
+<pre class="highlight"><span class="line"><span class="keyword">class</span> <span class="title class_">DateSelectorComponent</span> <span class="keyword">extends</span> <span class="title class_ inherited__">Component</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="title function_">constructor</span>(<span class="params">props</span>) &#123;</span><br><span class="line">    <span class="variable language_">super</span>(props);</span><br><span class="line">    <span class="keyword">let</span> todaydate = <span class="variable language_">this</span>.<span class="title function_">showLocale</span>(<span class="keyword">new</span> <span class="title class_">Date</span>());</span><br><span class="line">     <span class="variable language_">this</span>.<span class="property">state</span> = &#123;</span><br><span class="line">         <span class="attr">timenow</span>: todaydate,</span><br><span class="line">         <span class="attr">showCalendar</span>: <span class="literal">false</span></span><br><span class="line">    &#125;</span><br><span class="line">            <span class="keyword">return</span>(</span><br><span class="line">            <span class="language-xml"><span class="tag">&lt;<span class="name">div</span>&gt;</span></span></span><br><span class="line"><span class="language-xml">            <span class="tag">&lt;<span class="name">Input</span> <span class="attr">icon</span>=<span class="string">&#x27;calendar&#x27;</span> <span class="attr">iconPosition</span>=<span class="string">&#x27;left&#x27;</span> <span class="attr">readOnly</span> <span class="attr">onClick</span>=<span class="string">&#123;this.showCalendar&#125;</span> <span class="attr">value</span>=<span class="string">&#123;this.state.timenow&#125;</span> <span class="attr">ref</span>=<span class="string">&quot;inputbox&quot;</span>/&gt;</span></span></span><br><span class="line"><span class="language-xml">            <span class="tag">&lt;<span class="name">ButtonComponent</span> /&gt;</span></span></span><br><span class="line"><span class="language-xml">            &#123;CalendarComponent&#125;</span></span><br><span class="line"><span class="language-xml">            <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span></span><br><span class="line">        )</span><br><span class="line">&#125;</span><br></pre>
+<p>通过这样的方式，我就设置了state的默认初始值，默认日历选择器是不出现的，而今天的日期是今天日期，这很正常。然后在将所谓的值渲染到Dom上。</p>
+<h2 id="props"><a href="#props" class="headerlink" title="props"></a>props</h2><p>React的数据流是单向的，是自上向下的层级传递的，props可以对固定的数据进行传递。</p>
+<pre class="highlight"><span class="line"><span class="keyword">class</span> <span class="title class_">HelloMessage</span> <span class="keyword">extends</span> <span class="title class_ inherited__">Component</span> &#123;</span><br><span class="line">  <span class="title function_">render</span>( </span><br><span class="line">    <span class="keyword">return</span> <span class="language-xml"><span class="tag">&lt;<span class="name">h1</span>&gt;</span>Hello &#123;this.props.name&#125;<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span>;</span><br><span class="line">    )</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MainPage</span> <span class="keyword">extends</span> <span class="title class_ inherited__">Component</span> &#123;</span><br><span class="line"><span class="title function_">render</span>(<span class="params"></span>)&#123;</span><br><span class="line"> <span class="keyword">return</span>(</span><br><span class="line">  <span class="language-xml"><span class="tag">&lt;<span class="name">HelloMessage</span> <span class="attr">name</span>=<span class="string">&quot;John&quot;</span> /&gt;</span></span></span><br><span class="line">  )</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre>
+<p>在这种情况下，子组件会自动读取出父组件传递过来的<code>props</code>值John，并快速的渲染在页面上。</p>
+<h2 id="到底谁是谁"><a href="#到底谁是谁" class="headerlink" title="到底谁是谁"></a>到底谁是谁</h2><p><code>state</code>和<code>props</code>看起来很相似，其实是完全不同的东西。</p>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th><em>props</em></th>
+<th><em>state</em></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>可以从父组件得到初始值吗？</td>
+<td>可以</td>
+<td>可以</td>
+<td></td>
+</tr>
+<tr>
+<td>可以被父组件改变值吗？</td>
+<td>可以</td>
+<td>不可以</td>
+<td></td>
+</tr>
+<tr>
+<td>可以设置组件内部的初始值吗？</td>
+<td>可以</td>
+<td>可以</td>
+<td></td>
+</tr>
+<tr>
+<td>可以改变组件内部的初始值吗？</td>
+<td>不可以</td>
+<td>可以</td>
+<td></td>
+</tr>
+<tr>
+<td>可以设置子组件的初始值吗？</td>
+<td>可以</td>
+<td>可以</td>
+<td></td>
+</tr>
+<tr>
+<td>可以改变子组件的初始值吗？</td>
+<td>可以</td>
+<td>不可以</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>按照我的个人理解，<code>props</code>是静态的，存入不变量，比如 购物车里的 商品名称、价格；<code>state</code>是动态的，存入随时变化的量，比如 用户购买商品的总价，购买数目。</p>
+<p>从操作的角度上讲，<code>props</code>是单向传递的，会一直被传递到子组件，而<code>state</code>更倾向于自身，只能改变自身的值。</p>
+<h1 id="获取Dom"><a href="#获取Dom" class="headerlink" title="获取Dom"></a>获取Dom</h1><p><code>this.refs</code>是react的重要组成之一，通过该方法可以快速高效的获取Dom。</p>
+<p>例如，在JSX代码中这样写道</p>
+<pre class="highlight"><span class="line"><span class="tag">&lt;<span class="name">input</span> <span class="attr">ref</span>=<span class="string">&quot;myInput&quot;</span> /&gt;</span></span><br></pre>
+<p>便可以通过</p>
+<pre class="highlight"><span class="line"><span class="variable language_">this</span>.<span class="property">refs</span>.<span class="property">myInput</span>.<span class="property">value</span></span><br></pre>
+<p>命令获取该Input下的dom属性的value值，非常方便。</p>
+<h1 id="生命周期"><a href="#生命周期" class="headerlink" title="生命周期"></a>生命周期</h1><p>组件都是有生命周期的，生命周期内，<code>props</code>和<code>state</code>改变会导致React自动用Diff算法重新渲染页面。那么生命周期到底都有哪些呢？</p>
+<p>大体上分为三类：</p>
+<ul>
+<li>挂载： 组件被插入到DOM中。</li>
+<li>更新： 组件被重新渲染，查明DOM是否应该刷新。</li>
+<li>移除： 组件从DOM中移除。</li>
+</ul>
+<p>从流程上讲，是这样的：</p>
+<p><strong>挂载期：</strong></p>
+<p>getInitialState() –&gt;&gt; componentWillMount() –&gt;&gt; render() –&gt;&gt; componentDidMount()</p>
+<p><strong>更新期：</strong></p>
+<p>componentWillReceiveProps() –&gt;&gt; shouldComponentUpdate() –&gt;&gt; componentWillUpdate render() –&gt;&gt; componentDidUpdate()</p>
+<p><strong>移除期：</strong></p>
+<p>componentWillUnmount()</p>
+<h2 id="挂载"><a href="#挂载" class="headerlink" title="挂载"></a>挂载</h2><p>**componentWillMount()**： 在初次渲染之前执行一次，最早的执行点</p>
+<p>**componentDidMount()**： 在初次渲染之后执行，比较常用，比如持续执行某事件：</p>
+<pre class="highlight"><span class="line"><span class="title function_">componentDidMount</span>(<span class="params"></span>)&#123;</span><br><span class="line"> <span class="built_in">setInterval</span>(<span class="variable language_">this</span>.<span class="title function_">loadData</span>(<span class="variable language_">this</span>.<span class="property">state</span>.<span class="property">date</span>),<span class="number">1000</span>);</span><br><span class="line">&#125;</span><br></pre>
+
+<h2 id="更新"><a href="#更新" class="headerlink" title="更新"></a>更新</h2><p>**componentWillReceiveProps()**： 在组件接收到新的 <code>props</code> 的时候调用。在初始化渲染的时候，该方法不会调用。</p>
+<p>**shouldComponentUpdate()**： 在接收到新的 <code>props</code> 或者 <code>state</code>，将要渲染之前调用。</p>
+<p>**componentWillUpdate()**： 在接收到新的 props 或者 state 之前立刻调用。</p>
+<p>**componentDidUpdate()**： 在组件的更新已经同步到 DOM 中之后立刻被调用。</p>
+<h2 id="移除"><a href="#移除" class="headerlink" title="移除"></a>移除</h2><p>**componentWillUnmount()**： 在组件从 DOM 中移除的时候立刻被调用。</p>
+<h1 id="Flux"><a href="#Flux" class="headerlink" title="Flux"></a>Flux</h1><p>React是MVC中V的一部分，而Flux则是M和C的部分，Flux是单向数据流，符合React的核心思想，不过，Flux并不完善，是一个很松散的架构。</p>
+<ul>
+<li>Dispatcher： 处理动作分发，维护 Store 之间的依赖关系</li>
+<li>Store： 数据和逻辑部分</li>
+<li>View： React 组件，这一层可以看作 controller-views，作为视图同时响应用户交互</li>
+<li>Action： 提供给 Dispatcher 传递数据给 Store</li>
+</ul>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/react/3.png" class="lozad post-image"src="/content/images/react/3.png"></p>
+<h1 id="Redux"><a href="#Redux" class="headerlink" title="Redux"></a>Redux</h1><p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/react/5.jpeg" class="lozad post-image"src="/content/images/react/5.jpeg"></p>
+<p>Flux把总架构都搭好了，可是实现起来并不容易，因为Flux并没有强大的API，只是一种纯粹的思想实现，而Redux是Flux的“升级版”，把各个部分更加方便的实现起来。</p>
+<p>此部分未完待续</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>我觉得React给前端开发带来了一种全新的思想，那就是以JS为中心，一种全新的世界。</p>
+<p>网页不再是网页，而是像工程一样，一块块搭建起来的，拆下来，搬上去都很容易，似的前端再也不是那个凌乱拼凑的年代。</p>
+<p>我想任何一种编程语言，无论是解释性、脚本、编译语言都逃离不了这个全新的年代，就是组件化，大家似乎都在不同方向发展，但实际上，确实一样的。</p>
+<h1 id="相关阅读"><a href="#相关阅读" class="headerlink" title="相关阅读"></a>相关阅读</h1><p><a target="_blank" rel="noopener" href="http://www.infoq.com/cn/articles/react-dom-diff">深入浅出React（四）：虚拟DOM Diff算法解析</a></p>
+<p><a target="_blank" rel="noopener" href="http://bbs.reactnative.cn/topic/15/react-react-native-%E7%9A%84es5-es6%E5%86%99%E6%B3%95%E5%AF%B9%E7%85%A7%E8%A1%A8/2">React/React Native 的ES5 ES6写法对照表</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cllgeek.com/archives/544">React组件声明周期过程说明</a></p>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  <div class="nav-item-prev">
+    <a href="/2017/02/08/什么才是优秀的程序代码/" class="nav-link">
+      <i class="iconfont icon-left nav-prev-icon"></i>
+      <div>
+        <div class="nav-label">上一篇</div>
+        
+        <div class="nav-title">什么才是优秀的程序代码 </div>
+        
+      </div>
+    </a>
+  </div>
+  
+  
+  <div class="nav-item-next">
+    <a href="/2017/01/12/用Raspberry-Pi-Zero打造“即插即用”的服务器/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">用Raspberry Pi Zero打造“即插即用”的Web服务器 </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%99%9A%E6%8B%9FDom"><span class="toc-text">虚拟Dom</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#JSX"><span class="toc-text">JSX</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#ECMAScript-ES"><span class="toc-text">ECMAScript(ES)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BB%84%E4%BB%B6%E5%8C%96"><span class="toc-text">组件化</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%91%E5%AE%9A"><span class="toc-text">数据绑定</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B"><span class="toc-text">数据模型</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#state"><span class="toc-text">state</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#props"><span class="toc-text">props</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%B0%E5%BA%95%E8%B0%81%E6%98%AF%E8%B0%81"><span class="toc-text">到底谁是谁</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%8E%B7%E5%8F%96Dom"><span class="toc-text">获取Dom</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F"><span class="toc-text">生命周期</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8C%82%E8%BD%BD"><span class="toc-text">挂载</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9B%B4%E6%96%B0"><span class="toc-text">更新</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%A7%BB%E9%99%A4"><span class="toc-text">移除</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Flux"><span class="toc-text">Flux</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Redux"><span class="toc-text">Redux</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-text">总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%9B%B8%E5%85%B3%E9%98%85%E8%AF%BB"><span class="toc-text">相关阅读</span></a></li></ol>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>72</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>26</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>26</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%99%9A%E6%8B%9FDom"><span class="toc-text">虚拟Dom</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#JSX"><span class="toc-text">JSX</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#ECMAScript-ES"><span class="toc-text">ECMAScript(ES)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BB%84%E4%BB%B6%E5%8C%96"><span class="toc-text">组件化</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%91%E5%AE%9A"><span class="toc-text">数据绑定</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B"><span class="toc-text">数据模型</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#state"><span class="toc-text">state</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#props"><span class="toc-text">props</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%B0%E5%BA%95%E8%B0%81%E6%98%AF%E8%B0%81"><span class="toc-text">到底谁是谁</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%8E%B7%E5%8F%96Dom"><span class="toc-text">获取Dom</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F"><span class="toc-text">生命周期</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8C%82%E8%BD%BD"><span class="toc-text">挂载</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9B%B4%E6%96%B0"><span class="toc-text">更新</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%A7%BB%E9%99%A4"><span class="toc-text">移除</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Flux"><span class="toc-text">Flux</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Redux"><span class="toc-text">Redux</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-text">总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%9B%B8%E5%85%B3%E9%98%85%E8%AF%BB"><span class="toc-text">相关阅读</span></a></li></ol>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/traefik/" title="traefik"><div class="tags-list-item">traefik</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+    <a href="/tags/RaspberryPi/" title="RaspberryPi"><div class="tags-list-item">RaspberryPi</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%99%9A%E6%8B%9FDom"><span class="toc-text">虚拟Dom</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#JSX"><span class="toc-text">JSX</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#ECMAScript-ES"><span class="toc-text">ECMAScript(ES)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BB%84%E4%BB%B6%E5%8C%96"><span class="toc-text">组件化</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%91%E5%AE%9A"><span class="toc-text">数据绑定</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B"><span class="toc-text">数据模型</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#state"><span class="toc-text">state</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#props"><span class="toc-text">props</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%B0%E5%BA%95%E8%B0%81%E6%98%AF%E8%B0%81"><span class="toc-text">到底谁是谁</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%8E%B7%E5%8F%96Dom"><span class="toc-text">获取Dom</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F"><span class="toc-text">生命周期</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8C%82%E8%BD%BD"><span class="toc-text">挂载</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9B%B4%E6%96%B0"><span class="toc-text">更新</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%A7%BB%E9%99%A4"><span class="toc-text">移除</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Flux"><span class="toc-text">Flux</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Redux"><span class="toc-text">Redux</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-text">总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%9B%B8%E5%85%B3%E9%98%85%E8%AF%BB"><span class="toc-text">相关阅读</span></a></li></ol>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-19</div>
+        <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/"><div class="recent-posts-item-content">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-10</div>
+        <a href="/2021/03/10/Traefik 2 群晖硬核指南/"><div class="recent-posts-item-content">Traefik 2 群晖硬核指南</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-02-26</div>
+        <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Big Sur 黑苹果安装教程</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2024
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>

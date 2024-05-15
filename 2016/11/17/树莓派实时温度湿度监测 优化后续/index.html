@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>树莓派实时温度湿度监测 优化后续</title>
+  
+  
+  <meta property="og:title" content="树莓派实时温度湿度监测 优化后续">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2016/11/17/%E6%A0%91%E8%8E%93%E6%B4%BE%E5%AE%9E%E6%97%B6%E6%B8%A9%E5%BA%A6%E6%B9%BF%E5%BA%A6%E7%9B%91%E6%B5%8B%20%E4%BC%98%E5%8C%96%E5%90%8E%E7%BB%AD/index.html">
+  
+  
+  <meta property="og:img" content="/content/images/blog/me.jpg">
+  
+  
+  <meta property="og:img" content="&lt;p&gt;树莓派这个项目已经过去了两月了，一直没有维护，直到我到了英国后发现，在英国连接北京的树莓派网速堪忧，只有100kb/s，每次想查看家里的温度情况，都要等待很长时间才能加载出来，有时候会丢包，这让我很不爽，于是我决定小小的优化一下。&lt;/p&gt;">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2016-11-17">
+  <meta property="og:article:modified_time" content="2024-05-15">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="Raspberry">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      树莓派实时温度湿度监测 优化后续
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2016-11-17T15:46:21.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2016-11-17</span>
+    </time>
+    
+    <span class="dot"></span>
+    
+    <a href="/categories/Raspberry/" class="post-meta-link">Raspberry</a>
+    
+    
+    
+    <span class="dot"></span>
+    <span>1k 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/Raspberry/" class="post-meta-link">Raspberry</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <p>树莓派这个项目已经过去了两月了，一直没有维护，直到我到了英国后发现，在英国连接北京的树莓派网速堪忧，只有100kb/s，每次想查看家里的温度情况，都要等待很长时间才能加载出来，有时候会丢包，这让我很不爽，于是我决定小小的优化一下。</p>
+<span id="more"></span> 
+
+<h1 id="优化css-js"><a href="#优化css-js" class="headerlink" title="优化css js"></a>优化css js</h1><p>之前写的css与js一直没有压缩，这次决定用gulp压缩一下</p>
+<p>安装 <code>gulp</code></p>
+<pre class="highlight"><span class="line">npm install -g gulp </span><br></pre>
+<p>安装 <code>gulp-uglify</code> 模块</p>
+<pre class="highlight"><span class="line">npm install gulp-uglify</span><br></pre>
+<p>安装 <code>gulp-minify-css</code> 模块</p>
+<pre class="highlight"><span class="line">npm install gulp-minify-css</span><br></pre>
+<p>压缩源：</p>
+<pre class="highlight"><span class="line">asset/dist/js</span><br><span class="line">asset/dist/css</span><br></pre>
+
+<p>目标：</p>
+<pre class="highlight"><span class="line">asset/js</span><br><span class="line">asset/css</span><br></pre>
+
+<p>好的 我们可以开始写<code>gulpfile.js</code>文件了</p>
+<pre class="highlight"><span class="line"><span class="comment">// 获取 gulp</span></span><br><span class="line"><span class="keyword">var</span> gulp = <span class="built_in">require</span>(<span class="string">&#x27;gulp&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取 uglify 模块（用于压缩 JS）</span></span><br><span class="line"><span class="keyword">var</span> uglify = <span class="built_in">require</span>(<span class="string">&#x27;gulp-uglify&#x27;</span>)</span><br><span class="line"><span class="comment">// 获取 minify-css 模块（用于压缩 CSS）</span></span><br><span class="line"><span class="keyword">var</span> minifyCSS = <span class="built_in">require</span>(<span class="string">&#x27;gulp-minify-css&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 压缩 js 文件</span></span><br><span class="line"><span class="comment">// 在命令行使用 gulp script 启动此任务</span></span><br><span class="line">gulp.<span class="title function_">task</span>(<span class="string">&#x27;script&#x27;</span>, <span class="keyword">function</span>(<span class="params"></span>) &#123;</span><br><span class="line">    <span class="comment">// 1. 找到文件</span></span><br><span class="line">    gulp.<span class="title function_">src</span>(<span class="string">&#x27;asset/dist/js/*.js&#x27;</span>)</span><br><span class="line">    <span class="comment">// 2. 压缩文件</span></span><br><span class="line">        .<span class="title function_">pipe</span>(<span class="title function_">uglify</span>())</span><br><span class="line">    <span class="comment">// 3. 另存压缩后的文件</span></span><br><span class="line">        .<span class="title function_">pipe</span>(gulp.<span class="title function_">dest</span>(<span class="string">&#x27;asset/js&#x27;</span>))</span><br><span class="line">&#125;)</span><br><span class="line"><span class="comment">// 压缩 css 文件</span></span><br><span class="line"><span class="comment">// 在命令行使用 gulp css 启动此任务</span></span><br><span class="line">gulp.<span class="title function_">task</span>(<span class="string">&#x27;css&#x27;</span>, <span class="keyword">function</span> (<span class="params"></span>) &#123;</span><br><span class="line">    <span class="comment">// 1. 找到文件</span></span><br><span class="line">    gulp.<span class="title function_">src</span>(<span class="string">&#x27;asset/dist/css/*.css&#x27;</span>)</span><br><span class="line">    <span class="comment">// 2. 压缩文件</span></span><br><span class="line">        .<span class="title function_">pipe</span>(<span class="title function_">minifyCSS</span>())</span><br><span class="line">    <span class="comment">// 3. 另存为压缩文件</span></span><br><span class="line">        .<span class="title function_">pipe</span>(gulp.<span class="title function_">dest</span>(<span class="string">&#x27;asset/css&#x27;</span>))</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 在命令行使用 gulp auto 启动此任务</span></span><br><span class="line">gulp.<span class="title function_">task</span>(<span class="string">&#x27;auto&#x27;</span>, <span class="keyword">function</span> (<span class="params"></span>) &#123;</span><br><span class="line">    <span class="comment">// 监听文件修改，当文件被修改则执行 script 任务</span></span><br><span class="line">    gulp.<span class="title function_">watch</span>(<span class="string">&#x27;js/*.js&#x27;</span>, [<span class="string">&#x27;script&#x27;</span>])</span><br><span class="line">    gulp.<span class="title function_">watch</span>(<span class="string">&#x27;css/*.css&#x27;</span>, [<span class="string">&#x27;css&#x27;</span>])</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用 gulp.task(&#x27;default&#x27;) 定义默认任务</span></span><br><span class="line"><span class="comment">// 在命令行使用 gulp 启动 script 任务和 auto 任务</span></span><br><span class="line">gulp.<span class="title function_">task</span>(<span class="string">&#x27;default&#x27;</span>, [<span class="string">&#x27;script&#x27;</span>, <span class="string">&#x27;css&#x27;</span> , <span class="string">&#x27;auto&#x27;</span>])</span><br></pre>
+
+<p>执行gulp即可进行自动压缩及监听任务</p>
+<h1 id="结构优化"><a href="#结构优化" class="headerlink" title="结构优化"></a>结构优化</h1><p>这是原有的结构</p>
+<p>前端：Semantic UI + eCharts + JQuery Datapicker</p>
+<p>数据： json(时间)</p>
+<p>后端：Python + Apache</p>
+<p>后端的python程序负责测温度和测湿度，并生成json数据，为了保证事实性，python程序一直在读写相同的json文件，每一分钟读写一次，造成了json文件的比较大，大概有68KB，在前端是通过ajax加载的json文件，如果网速很慢的话，必然会造成很长时间的延迟。</p>
+<p>为了解决这个问题，首先第一步就是减小json文件大小。设计了一个解决方案是，以前的前端已经可以加载每小时数据和每分钟数据，不过小时和分钟的数据是通过在js中忽略加载实现的。</p>
+<p>而现在采用新的方案，在data数据目录下，分别建立两个目录。</p>
+<pre class="highlight"><span class="line">data/min</span><br><span class="line">data/hour</span><br></pre>
+
+<p>数据： json(min) / json(hour) </p>
+<p>min的数据专门用于保存min,hour专门用于保存hour，为了解决旧数据迁移问题，首先先将内容移动到min目录下，在根目录下写了一个python小程序，执行挑选出hour数据并且迁移。</p>
+<pre class="highlight"><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> string</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">jsonRead</span>(<span class="params">path,topath,name</span>):</span><br><span class="line">    pathfile = path + <span class="string">&#x27;/&#x27;</span> + name</span><br><span class="line">    topathfile = topath + <span class="string">&#x27;/&#x27;</span> + name</span><br><span class="line">    <span class="keyword">if</span> os.path.exists(pathfile):</span><br><span class="line">        file =<span class="built_in">open</span>(pathfile,<span class="string">&quot;r&quot;</span>)</span><br><span class="line">        data = json.loads(file.read().decode(<span class="string">&#x27;utf-8&#x27;</span>))</span><br><span class="line">        i = <span class="number">1</span></span><br><span class="line">        jsonWrite(data[<span class="number">0</span>],topathfile)</span><br><span class="line">        <span class="keyword">for</span> v <span class="keyword">in</span> data:</span><br><span class="line">            i = i + <span class="number">1</span></span><br><span class="line">            <span class="keyword">if</span>(i%<span class="number">60</span>==<span class="number">0</span>):</span><br><span class="line">                jsonWrite(v,topathfile)</span><br><span class="line">        file.close()</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="built_in">print</span> <span class="string">&#x27;unable to open &#x27;</span> + pathfile + <span class="string">&#x27;file&#x27;</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">jsonWrite</span>(<span class="params">data,pathfile</span>):</span><br><span class="line">    <span class="keyword">if</span> os.path.exists(pathfile):</span><br><span class="line">      file =<span class="built_in">open</span>(pathfile,<span class="string">&quot;rb+&quot;</span>)</span><br><span class="line">      file.seek(-<span class="number">1</span>,os.SEEK_END)</span><br><span class="line">      file.truncate()</span><br><span class="line">      file.write(<span class="string">&quot;,&quot;</span>)</span><br><span class="line">      json.dump(data,file)</span><br><span class="line">      file.write(<span class="string">&quot;]&quot;</span>)</span><br><span class="line">      file.close()</span><br><span class="line">      <span class="built_in">print</span> <span class="string">&#x27;succes: &#x27;</span>+ pathfile</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">      file =<span class="built_in">open</span>(pathfile,<span class="string">&quot;w&quot;</span>)</span><br><span class="line">      file.write(<span class="string">&quot;[&quot;</span>)</span><br><span class="line">      json.dump(data,file)</span><br><span class="line">      file.write(<span class="string">&quot;]&quot;</span>)</span><br><span class="line">      file.close()</span><br><span class="line"></span><br><span class="line"><span class="built_in">dir</span> = <span class="string">&#x27;web/data/min&#x27;</span></span><br><span class="line">dist = <span class="string">&#x27;web/data/hour&#x27;</span></span><br><span class="line">files = os.listdir(<span class="built_in">dir</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> root, dirs, files <span class="keyword">in</span> os.walk(<span class="built_in">dir</span>):</span><br><span class="line">    <span class="keyword">for</span> name <span class="keyword">in</span> files:</span><br><span class="line">        jsonRead(<span class="built_in">dir</span>,dist,name)</span><br><span class="line"></span><br></pre>
+<p>与此同时也需要修改 前端js 与 后端python<br>具体代码在 <a target="_blank" rel="noopener" href="https://github.com/yfgeek/rpi-TempRuntime/">项目地址</a>，不贴了。</p>
+<p>最后，经过优化，速度大概提升了5倍，前端获取的json文件为1KB。</p>
+<p>后续还会增加季度数据统计，等待数据量大一点的时候方便做数据统计工作。</p>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  <div class="nav-item-prev">
+    <a href="/2016/11/19/当我关注3万Githb用户后发生了什么/" class="nav-link">
+      <i class="iconfont icon-left nav-prev-icon"></i>
+      <div>
+        <div class="nav-label">上一篇</div>
+        
+        <div class="nav-title">当我关注3万Github用户后发生了什么 </div>
+        
+      </div>
+    </a>
+  </div>
+  
+  
+  <div class="nav-item-next">
+    <a href="/2016/11/08/Github Follow 及 BaiduBlogTransfer 项目/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">Github Follow 及 BaiduBlogTransfer 项目 </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BC%98%E5%8C%96css-js"><span class="toc-text">优化css js</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BB%93%E6%9E%84%E4%BC%98%E5%8C%96"><span class="toc-text">结构优化</span></a></li></ol>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>72</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>26</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>26</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BC%98%E5%8C%96css-js"><span class="toc-text">优化css js</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BB%93%E6%9E%84%E4%BC%98%E5%8C%96"><span class="toc-text">结构优化</span></a></li></ol>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/traefik/" title="traefik"><div class="tags-list-item">traefik</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+    <a href="/tags/RaspberryPi/" title="RaspberryPi"><div class="tags-list-item">RaspberryPi</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BC%98%E5%8C%96css-js"><span class="toc-text">优化css js</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BB%93%E6%9E%84%E4%BC%98%E5%8C%96"><span class="toc-text">结构优化</span></a></li></ol>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-19</div>
+        <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/"><div class="recent-posts-item-content">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-10</div>
+        <a href="/2021/03/10/Traefik 2 群晖硬核指南/"><div class="recent-posts-item-content">Traefik 2 群晖硬核指南</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-02-26</div>
+        <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Big Sur 黑苹果安装教程</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2024
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>

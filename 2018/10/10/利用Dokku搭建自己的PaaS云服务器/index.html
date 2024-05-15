@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>利用Dokku搭建自己的PaaS云服务器</title>
+  
+  
+  <meta property="og:title" content="利用Dokku搭建自己的PaaS云服务器">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2018/10/10/%E5%88%A9%E7%94%A8Dokku%E6%90%AD%E5%BB%BA%E8%87%AA%E5%B7%B1%E7%9A%84PaaS%E4%BA%91%E6%9C%8D%E5%8A%A1%E5%99%A8/index.html">
+  
+  
+  <meta property="og:img" content="/banners/dokku.png">
+  
+  
+  <meta property="og:img" content="Thinking as a Geek">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2018-10-10">
+  <meta property="og:article:modified_time" content="2024-05-15">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="PaaS">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<div class="image-wrapper">
+  <img src="/banners/dokku.png" data-src="/banners/dokku.png"
+    srcset="data:image/svg+xml,%3Csvg%20xmlns=&#39;http://www.w3.org/2000/svg&#39;%20viewBox=&#39;0%200%20300%20300&#39;%3E%3C/svg%3E"
+    class="image lozad"
+    alt="thumbnail"
+  >
+</div>
+
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      利用Dokku搭建自己的PaaS云服务器
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2018-10-10T13:54:16.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2018-10-10</span>
+    </time>
+    
+    <span class="dot"></span>
+    
+    <a href="/categories/PaaS/" class="post-meta-link">PaaS</a>
+    
+    
+    
+    <span class="dot"></span>
+    <span>2.7k 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/PaaS/" class="post-meta-link">PaaS</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <p>自从几年前用过各种云平台的部署方式（App Engine，云应用引擎），就感觉再也回不去了。每次用到传统的部署方式，都感觉这是<strong>上个世纪</strong>的感觉，可是痛点就在于，不管是阿里云、百度云、腾讯云，各种云平台的云应用引擎，早就开始逐渐的由免费转向收费，虽然价格不高，但是总感觉受制于人， 而且不同平台不同标准，各种平台的云服务让你越来越上瘾。</p>
+<p>很早听<a target="_blank" rel="noopener" href="https://blog.daohanchong.com/#blog">@WildCat</a>大佬说过，可以自己搭建自己的PaaS平台（支持Java、Python、Ruby、PHP、Node、Go等），由于之前手上的服务器空间有限，一直没有试过，利用闲暇时间，买了台新的服务器，动手尝试了一下，果然不错。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="https://avatars1.githubusercontent.com/u/13455795?s=400&v=4" class="lozad post-image"src="https://avatars1.githubusercontent.com/u/13455795?s=400&v=4"></p>
+<p>先简单说一下App Engine，各种App Engine最大的优点就是部署方便成本低，做为开发者，不需要管运行环境如何，只需要写好相关的配置文件，用git的方式，将代码上传到服务器上，服务器将代码放在docker容器内运行，服务器实现自动化部署。</p>
+<p>至于配置安装过程很简单，按照<a target="_blank" rel="noopener" href="http://dokku.viewdocs.io/dokku/getting-started/installation/">官网英文文档</a>，一步一步来，问题不大，下面描述一下过程。</p>
+<h1 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h1><p>官网中要求，要安装dokku，需要：</p>
+<ul>
+<li>全新安装的Ubuntu 16.04 x64, Ubuntu 14.04 x64, Debian 8.2 x64 or CentOS 7 x64 (不建议)</li>
+<li>至少1GB内存 （如果不足，官网也给出了解决方法）</li>
+</ul>
+<p>之前尝试使用过Ubuntu18版本安装，安装未遂，后来老老实实的走官网的版本要求，一次性成功。</p>
+<p>我是Centos的死粉，但是官网中声明，如果使用centos系统，将无法使用网页配置（可以使用cli进行配置）。</p>
+<p>我的安装环境：Ubuntu 16.04 x64，内存1GB。</p>
+<h1 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h1><pre class="highlight"><span class="line">wget https://raw.githubusercontent.com/dokku/dokku/v0.12.13/bootstrap.sh;</span><br><span class="line">sudo DOKKU_TAG=v0.12.13 bash bootstrap.sh</span><br></pre>
+
+<p>在服务器上执行上述两句，服务器会用bash脚本自动安装，速度有点慢，如果没有任何报错，就操作完成了。</p>
+<h1 id="设置主域名-amp-子域名"><a href="#设置主域名-amp-子域名" class="headerlink" title="设置主域名&amp;子域名"></a>设置主域名&amp;子域名</h1><p>dokku支持子域名解析，这很帅气，我们可以用泛解析的方式，将IP都指向一个域名下。</p>
+<p>举个例子，如果有个web 1，命名为web1，我们可以在git push程序后，自动部署并解析到你的域名下</p>
+<p><code>web1.xxx.com</code>，这种思路很适合做小的prototype或者demo。当然，如果你想设置单独的域名，我们可以使用<code>dokku domains</code>命令进行设置，<a target="_blank" rel="noopener" href="http://dokku.viewdocs.io/dokku~v0.7.2/configuration/domains/">参考</a>。</p>
+<h2 id="设置DNS解析"><a href="#设置DNS解析" class="headerlink" title="设置DNS解析"></a>设置DNS解析</h2><p>进入你的域名DNS管理网站，如阿里云、腾讯云、dnspod、cloudflare。本文以cloudflare为例。</p>
+<p>添加A记录，Name 填写 *.lab IP 地址填写为你的服务器地址。</p>
+<p>添加A记录，Name 填写 lab IP 地址填写为你的服务器地址。</p>
+<h2 id="进入Dokku-Web配置页面设置"><a href="#进入Dokku-Web配置页面设置" class="headerlink" title="进入Dokku Web配置页面设置"></a>进入Dokku Web配置页面设置</h2><p>浏览器打开服务器IP地址，端口80，第一次配置会进入配置页面。</p>
+<p>Public Key填写为你要上传git的时提交的公钥，位置<code>~\.ssh\id_rsa.pub</code>，如果没有，就用<code>ssh-keygen</code>生成一个并且放到<code>~\.ssh</code>目录下即可。</p>
+<p>在配置页面中Hostname填写为服务器主地址，我的填写为 <code>lab.yfgeek.com</code></p>
+<p>同时勾选<code>Use virtualhost naming for apps</code>，允许使用子域名。</p>
+<p>点击完成安装，就完成配置了。</p>
+<h2 id="部署前准备"><a href="#部署前准备" class="headerlink" title="部署前准备"></a>部署前准备</h2><h2 id="语言支持"><a href="#语言支持" class="headerlink" title="语言支持"></a>语言支持</h2><p>实际上，dokku是heroku的最小化版本，他们之间的例子是互通的，因此可以访问：</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/heroku">https://github.com/heroku</a></p>
+<p>官方给了很多例子，搜搜demo或者对应语言，如java，找到相应的例子</p>
+<p>node: <a target="_blank" rel="noopener" href="https://github.com/heroku/node-js-sample">node-js-sample</a></p>
+<p>ruby:<a target="_blank" rel="noopener" href="https://github.com/heroku/ruby-sample">ruby-sample</a></p>
+<p>rails:<a target="_blank" rel="noopener" href="https://github.com/heroku/ruby-sample">ruby-sample</a></p>
+<p>java:<a target="_blank" rel="noopener" href="https://github.com/heroku/ruby-rails-sample">ruby-rails-sample</a></p>
+<p>python:<a target="_blank" rel="noopener" href="https://github.com/heroku/java-sample">java-sample</a></p>
+<p>spring:<a target="_blank" rel="noopener" href="https://github.com/heroku/java-spring-sample">java-spring-sample</a></p>
+<p>django:<a target="_blank" rel="noopener" href="https://github.com/heroku/python-django-sample">python-django-sample</a></p>
+<p>scala:<a target="_blank" rel="noopener" href="https://github.com/heroku/scala-sample">scala-sample</a></p>
+<p>php:<a target="_blank" rel="noopener" href="https://github.com/heroku/php-getting-started">php-getting-started</a></p>
+<p>php:<a target="_blank" rel="noopener" href="https://github.com/heroku/facebook-template-php">facebook-template-php</a></p>
+<p>go-kafaka:<a target="_blank" rel="noopener" href="https://github.com/heroku/heroku-kafka-demo-go">heroku-kafka-demo-go</a></p>
+<p>此外还有很多</p>
+<h2 id="数据库支持"><a href="#数据库支持" class="headerlink" title="数据库支持"></a>数据库支持</h2><p>根据<a target="_blank" rel="noopener" href="http://dokku.viewdocs.io/dokku/community/plugins/#official-plugins-beta">官网</a>写的支持的数据库，可以有以下列表，数据库以插件的形式安装。</p>
+<h2 id="关系型数据库"><a href="#关系型数据库" class="headerlink" title="关系型数据库"></a>关系型数据库</h2><table>
+<thead>
+<tr>
+<th>Plugin</th>
+<th>Author</th>
+<th>Compatibility</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/Kloadut/dokku-md-plugin">MariaDB</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/Kloadut">Kloadut</a></td>
+<td>0.3.x</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/ohardy/dokku-mariadb">MariaDB (single container)</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/ohardy">ohardy</a></td>
+<td>0.3.x</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/krisrang/dokku-mariadb">MariaDB (single container)</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/krisrang">krisrang</a></td>
+<td>0.3.26+</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/jlachowski/dokku-pg-plugin">PostgreSQL</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/jlachowski">jlachowski</a></td>
+<td>0.3.x</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/ohardy/dokku-psql">PostgreSQL (single container)</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/ohardy">ohardy</a></td>
+<td>0.3.x</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/Flink/dokku-psql-single-container">PostgreSQL (single container)</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/Flink">Flink</a></td>
+<td>0.3.26+</td>
+</tr>
+</tbody></table>
+<h2 id="缓存"><a href="#缓存" class="headerlink" title="缓存"></a>缓存</h2><table>
+<thead>
+<tr>
+<th>Plugin</th>
+<th>Author</th>
+<th>Compatibility</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/Aluxian/dokku-nginx-cache">Nginx Cache</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/Aluxian">Aluxian</a></td>
+<td>0.5.0+</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/ohardy/dokku-redis">Redis (single container)</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/ohardy">ohardy</a></td>
+<td>0.3.x</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/Zenedith/dokku-varnish-plugin">Varnish</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/Zenedith">Zenedith</a></td>
+<td>Varnish cache between nginx and application with base configuration</td>
+</tr>
+</tbody></table>
+<h2 id="队列"><a href="#队列" class="headerlink" title="队列"></a>队列</h2><table>
+<thead>
+<tr>
+<th>Plugin</th>
+<th>Author</th>
+<th>Compatibility</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/jlachowski/dokku-rabbitmq-plugin">RabbitMQ</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/jlachowski">jlachowski</a></td>
+<td>0.3.x</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/jlachowski/dokku-rabbitmq-single-plugin">RabbitMQ (single container)</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/jlachowski">jlachowski</a></td>
+<td>0.3.x</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/cu12/dokku-elasticmq">ElasticMQ (SQS compatible)</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/cu12">cu12</a></td>
+<td>0.5.0+</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/SpinifexGroup/dokku-vernemq">VerneMQ (MQTT Broker)</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/mrname">mrname</a></td>
+<td>0.4.0+</td>
+</tr>
+</tbody></table>
+<h2 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h2><table>
+<thead>
+<tr>
+<th>Plugin</th>
+<th>Author</th>
+<th>Compatibility</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/basgys/dokku-etcd">etcd</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/basgys">basgys</a></td>
+<td>0.4.x</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/cu12/dokku-fake_sns">FakeSNS</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/cu12">cu12</a></td>
+<td>0.5.0+</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/basgys/dokku-influxdb">InfluxDB</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/basgys">basgys</a></td>
+<td>0.4.x</td>
+</tr>
+<tr>
+<td><a target="_blank" rel="noopener" href="https://github.com/stuartpb/dokku-rethinkdb-plugin">RethinkDB</a></td>
+<td><a target="_blank" rel="noopener" href="https://github.com/stuartpb">stuartpb</a></td>
+<td>0.3.x</td>
+</tr>
+</tbody></table>
+<h1 id="部署第一个测试应用"><a href="#部署第一个测试应用" class="headerlink" title="部署第一个测试应用"></a>部署第一个测试应用</h1><h2 id="创建APP"><a href="#创建APP" class="headerlink" title="创建APP"></a>创建APP</h2><p>登录服务器，执行dokku apps:create [name]创建应用</p>
+<pre class="highlight"><span class="line">dokku apps:create ruby-rails-sample</span><br></pre>
+
+<h2 id="安装数据库插件"><a href="#安装数据库插件" class="headerlink" title="安装数据库插件"></a>安装数据库插件</h2><p>本文以安装PostgreSQL为例</p>
+<pre class="highlight"><span class="line">sudo dokku plugin:install https://github.com/dokku/dokku-postgres.git</span><br></pre>
+
+<h2 id="创建应用的数据库"><a href="#创建应用的数据库" class="headerlink" title="创建应用的数据库"></a>创建应用的数据库</h2><pre class="highlight"><span class="line">dokku postgres:create rails-database</span><br></pre>
+
+<h2 id="关联数据库与APP"><a href="#关联数据库与APP" class="headerlink" title="关联数据库与APP"></a>关联数据库与APP</h2><p>通过在代码后端设置读取<code>POSTGRES_URL</code>环境变量，连接数据库。</p>
+<p>与此同时，我们需要将APP与数据库关联。</p>
+<pre class="highlight"><span class="line">dokku postgres:link rails-database ruby-rails-sample</span><br></pre>
+
+<h2 id="部署App"><a href="#部署App" class="headerlink" title="部署App"></a>部署App</h2><p>下载Sample代码，后将代码传到服务器上</p>
+<pre class="highlight"><span class="line">git clone git@github.com:heroku/ruby-rails-sample.git</span><br><span class="line">git remote add dokku dokku@lab.yfgeek.com:ruby-rails-sample</span><br><span class="line">git push dokku master</span><br></pre>
+
+<p>值得一提的是，用户名必须是dokku，否则会出现问题。</p>
+<pre class="highlight"><span class="line">Counting objects: 236, <span class="keyword">done</span>.</span><br><span class="line">Delta compression using up to 4 threads.</span><br><span class="line">Compressing objects: 100% (135/135), <span class="keyword">done</span>.</span><br><span class="line">Writing objects: 100% (236/236), 41.85 KiB | 10.46 MiB/s, <span class="keyword">done</span>.</span><br><span class="line">Total 236 (delta 85), reused 236 (delta 85)</span><br><span class="line">-----&gt; Cleaning up...</span><br><span class="line">-----&gt; Building ruby-rails-sample from herokuish...</span><br><span class="line">-----&gt; Setting config vars</span><br><span class="line">       CURL_CONNECT_TIMEOUT:  90</span><br><span class="line">-----&gt; Setting config vars</span><br><span class="line">       CURL_TIMEOUT:  600</span><br><span class="line">-----&gt; Adding BUILD_ENV to build environment...</span><br><span class="line">-----&gt; Ruby app detected</span><br><span class="line">-----&gt; Compiling Ruby/Rails</span><br><span class="line">-----&gt; Using Ruby version: ruby-2.2.1</span><br><span class="line">-----&gt; Installing dependencies using bundler 1.15.2</span><br><span class="line">       Running: bundle install --without development:<span class="built_in">test</span> --path vendor/bundle --binstubs vendor/bundle/bin -j4 --deployment</span><br><span class="line">       Fetching gem metadata from https://rubygems.org/..........</span><br><span class="line">       Fetching version metadata from https://rubygems.org/..</span><br><span class="line">       Fetching dependency metadata from https://rubygems.org/.</span><br><span class="line">       Using rake 10.4.2</span><br><span class="line">       Fetching i18n 0.7.0</span><br><span class="line">       Fetching json 1.8.2</span><br><span class="line">       Fetching minitest 5.5.1</span><br><span class="line">       Installing i18n 0.7.0</span><br><span class="line">       Installing minitest 5.5.1</span><br><span class="line">       Installing json 1.8.2 with native extensions</span><br><span class="line">       Fetching thread_safe 0.3.5</span><br><span class="line">       Installing thread_safe 0.3.5</span><br><span class="line">       Fetching builder 3.2.2</span><br><span class="line">       Installing builder 3.2.2</span><br><span class="line">       Fetching erubis 2.7.0</span><br><span class="line">       Fetching mini_portile 0.6.2</span><br><span class="line">       Installing mini_portile 0.6.2</span><br><span class="line">       Fetching rack 1.6.0</span><br><span class="line">       Installing erubis 2.7.0</span><br><span class="line">       Fetching mime-types 2.4.3</span><br><span class="line">       Installing mime-types 2.4.3</span><br><span class="line">       Fetching arel 6.0.0</span><br><span class="line">       Installing rack 1.6.0</span><br><span class="line">       Installing arel 6.0.0</span><br><span class="line">       Using bundler 1.15.2</span><br><span class="line">       Fetching coffee-script-source 1.9.1</span><br><span class="line">       Fetching execjs 2.5.2</span><br><span class="line">       Installing execjs 2.5.2</span><br><span class="line">       Installing coffee-script-source 1.9.1</span><br><span class="line">       Fetching thor 0.19.1</span><br><span class="line">       Fetching hike 1.2.3</span><br><span class="line">       Installing thor 0.19.1</span><br><span class="line">       Installing hike 1.2.3</span><br><span class="line">       Fetching multi_json 1.11.0</span><br><span class="line">       Installing multi_json 1.11.0</span><br><span class="line">       Fetching pg 0.18.1</span><br><span class="line">       Fetching tilt 1.4.1</span><br><span class="line">       Installing tilt 1.4.1</span><br><span class="line">       Fetching rails_serve_static_assets 0.0.4</span><br><span class="line">       Installing pg 0.18.1 with native extensions</span><br><span class="line">       Installing rails_serve_static_assets 0.0.4</span><br><span class="line">       Fetching rails_stdout_logging 0.0.3</span><br><span class="line">       Installing rails_stdout_logging 0.0.3</span><br><span class="line">       Using rdoc 4.2.0</span><br><span class="line">       Fetching sass 3.4.13</span><br><span class="line">       Installing sass 3.4.13</span><br><span class="line">       Fetching tzinfo 1.2.2</span><br><span class="line">       Installing tzinfo 1.2.2</span><br><span class="line">       Fetching nokogiri 1.6.6.2</span><br><span class="line">       Installing nokogiri 1.6.6.2 with native extensions</span><br><span class="line">       Fetching mail 2.6.3</span><br><span class="line">       Installing mail 2.6.3</span><br><span class="line">       Fetching rack-test 0.6.3</span><br><span class="line">       Installing rack-test 0.6.3</span><br><span class="line">       Fetching puma 2.11.1</span><br><span class="line">       Installing puma 2.11.1 with native extensions</span><br><span class="line">       Fetching coffee-script 2.4.1</span><br><span class="line">       Installing coffee-script 2.4.1</span><br><span class="line">       Fetching sprockets 2.12.3</span><br><span class="line">       Installing sprockets 2.12.3</span><br><span class="line">       Fetching rails_12factor 0.0.3</span><br><span class="line">       Installing rails_12factor 0.0.3</span><br><span class="line">       Fetching loofah 2.0.1</span><br><span class="line">       Installing loofah 2.0.1</span><br><span class="line">       Fetching rails-html-sanitizer 1.0.2</span><br><span class="line">       Installing rails-html-sanitizer 1.0.2</span><br><span class="line">       Fetching activesupport 4.2.1</span><br><span class="line">       Fetching sdoc 0.4.1</span><br><span class="line">       Fetching uglifier 2.7.1</span><br><span class="line">       Installing uglifier 2.7.1</span><br><span class="line">       Installing sdoc 0.4.1</span><br><span class="line">       Installing activesupport 4.2.1</span><br><span class="line">       Fetching rails-deprecated_sanitizer 1.0.3</span><br><span class="line">       Fetching globalid 0.3.5</span><br><span class="line">       Fetching activemodel 4.2.1</span><br><span class="line">       Installing rails-deprecated_sanitizer 1.0.3</span><br><span class="line">       Installing activemodel 4.2.1</span><br><span class="line">       Fetching jbuilder 2.2.12</span><br><span class="line">       Fetching rails-dom-testing 1.0.6</span><br><span class="line">       Installing globalid 0.3.5</span><br><span class="line">       Fetching activerecord 4.2.1</span><br><span class="line">       Installing jbuilder 2.2.12</span><br><span class="line">       Installing rails-dom-testing 1.0.6</span><br><span class="line">       Fetching activejob 4.2.1</span><br><span class="line">       Fetching actionview 4.2.1</span><br><span class="line">       Installing activejob 4.2.1</span><br><span class="line">       Installing actionview 4.2.1</span><br><span class="line">       Fetching actionpack 4.2.1</span><br><span class="line">       Installing activerecord 4.2.1</span><br><span class="line">       Installing actionpack 4.2.1</span><br><span class="line">       Fetching actionmailer 4.2.1</span><br><span class="line">       Fetching railties 4.2.1</span><br><span class="line">       Fetching sprockets-rails 2.2.4</span><br><span class="line">       Installing actionmailer 4.2.1</span><br><span class="line">       Installing sprockets-rails 2.2.4</span><br><span class="line">       Installing railties 4.2.1</span><br><span class="line">       Fetching coffee-rails 4.1.0</span><br><span class="line">       Fetching jquery-rails 4.0.3</span><br><span class="line">       Fetching rails 4.2.1</span><br><span class="line">       Installing coffee-rails 4.1.0</span><br><span class="line">       Fetching sass-rails 5.0.3</span><br><span class="line">       Installing jquery-rails 4.0.3</span><br><span class="line">       Fetching turbolinks 2.5.3</span><br><span class="line">       Installing sass-rails 5.0.3</span><br><span class="line">       Installing turbolinks 2.5.3</span><br><span class="line">       Installing rails 4.2.1</span><br><span class="line">       Bundle complete! 13 Gemfile dependencies, 53 gems now installed.</span><br><span class="line">       Gems <span class="keyword">in</span> the <span class="built_in">groups</span> development and <span class="built_in">test</span> were not installed.</span><br><span class="line">       Bundled gems are installed into ./vendor/bundle.</span><br><span class="line">       Bundle completed (47.15s)</span><br><span class="line">       Cleaning up the bundler cache.</span><br><span class="line">       The latest bundler is 1.17.0.pre.1, but you are currently running 1.15.2.</span><br><span class="line">       To update, run `gem install bundler --pre`</span><br><span class="line">-----&gt; Installing node-v8.10.0-linux-x64</span><br><span class="line">-----&gt; Detecting rake tasks</span><br><span class="line">-----&gt; Preparing app <span class="keyword">for</span> Rails asset pipeline</span><br><span class="line">       Running: rake assets:precompile</span><br><span class="line">       I, [2018-10-10T05:36:01.119423 <span class="comment">#1214]  INFO -- : Writing /tmp/build/public/assets/application-47fe71a3b34a93e1929c175b1755d405.js</span></span><br><span class="line">       I, [2018-10-10T05:36:01.144742 <span class="comment">#1214]  INFO -- : Writing /tmp/build/public/assets/application-c06dd6a542ea15147e6794e03643f87c.css</span></span><br><span class="line">       Asset precompilation completed (7.21s)</span><br><span class="line">       Cleaning assets</span><br><span class="line">       Running: rake assets:clean</span><br><span class="line">-----&gt; Detecting rails configuration</span><br><span class="line">-----&gt; Discovering process types</span><br><span class="line">       Procfile declares types -&gt; web</span><br><span class="line">-----&gt; Releasing ruby-rails-sample (dokku/ruby-rails-sample:latest)...</span><br><span class="line">-----&gt; Deploying ruby-rails-sample (dokku/ruby-rails-sample:latest)...</span><br><span class="line">-----&gt; Attempting to run scripts.dokku.predeploy from app.json (<span class="keyword">if</span> defined)</span><br><span class="line">-----&gt; App Procfile file found (/home/dokku/ruby-rails-sample/DOKKU_PROCFILE)</span><br><span class="line">-----&gt; DOKKU_SCALE file not found <span class="keyword">in</span> app image. Generating one based on Procfile...</span><br><span class="line">-----&gt; New DOKKU_SCALE file generated</span><br><span class="line">=====&gt; web=1</span><br><span class="line">-----&gt; Attempting pre-flight checks</span><br><span class="line">       For more efficient zero downtime deployments, create a file CHECKS.</span><br><span class="line">       See http://dokku.viewdocs.io/dokku/deployment/zero-downtime-deploys/ <span class="keyword">for</span> examples</span><br><span class="line">       CHECKS file not found <span class="keyword">in</span> container: Running simple container check...</span><br><span class="line">-----&gt; Waiting <span class="keyword">for</span> 10 seconds ...</span><br><span class="line">-----&gt; Default container check successful!</span><br><span class="line">-----&gt; Running post-deploy</span><br><span class="line">-----&gt; Creating new /home/dokku/ruby-rails-sample/VHOST...</span><br><span class="line">-----&gt; Setting config vars</span><br><span class="line">       DOKKU_PROXY_PORT:  80</span><br><span class="line">-----&gt; Setting config vars</span><br><span class="line">       DOKKU_PROXY_PORT_MAP:  http:80:5000</span><br><span class="line">-----&gt; Configuring ruby-rails-sample.lab.yfgeek.com...(using built-in template)</span><br><span class="line">-----&gt; Creating http nginx.conf</span><br><span class="line">-----&gt; Running nginx-pre-reload</span><br><span class="line">       Reloading nginx</span><br><span class="line">-----&gt; Setting config vars</span><br><span class="line">       DOKKU_APP_RESTORE:  1</span><br><span class="line">=====&gt; Renaming container (e38662846bcf) cranky_colden to ruby-rails-sample.web.1</span><br><span class="line">-----&gt; Attempting to run scripts.dokku.postdeploy from app.json (<span class="keyword">if</span> defined)</span><br><span class="line">=====&gt; Application deployed:</span><br><span class="line">       http://ruby-rails-sample.lab.yfgeek.com</span><br></pre>
+
+<p>如果代码有更新，只需要重新push，应用就会自动重新部署，一步到位。</p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>既然回不去了，就不要回去了，使用Dokku这样的PaaS的部署方式，简单快捷，仿若又回到了几年前。</p>
+<p>Dokku美中不足的就是，没有Web界面，所有操作都需要用Cli来实现，这样的门槛，会让很多小白望而却步。很多云服务厂商都提供这样的方式，但是也会提供界面，不过没有web服务带来的好处就是，能最大限度的节省云服务器的资源，让低内存低配置的电脑也能勉强跑起来。</p>
+<p>以此类推，我们可以用这样的方法自动化部署更多的APP，同时也支持很多关系型、非关系型数据库，如Python、PHP、Java，轻松Git命令，后面的运维相关操作，根本不用你管，docker的方式，让我们更加便利的部署各种应用，更加安全，更加便捷可靠。</p>
+<p>本文demo地址：<a target="_blank" rel="noopener" href="http://ruby-rails-sample.lab.yfgeek.com/">http://ruby-rails-sample.lab.yfgeek.com</a></p>
+<p>最后值得一提的是，官网的文档十分简明，提供了各种配置，本文介绍的比较具有局限性，建议到官网文档仔细拜读。</p>
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/dokku/1.png" class="lozad post-image"src="/content/images/dokku/1.png"></p>
+<p><a target="_blank" rel="noopener" href="http://dokku.viewdocs.io/dokku~v0.7.2/getting-started/installation/">http://dokku.viewdocs.io/dokku~v0.7.2/getting-started/installation/</a></p>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  <div class="nav-item-prev">
+    <a href="/2019/05/18/NUC5i5RYH-Mojave-黑苹果安装手记/" class="nav-link">
+      <i class="iconfont icon-left nav-prev-icon"></i>
+      <div>
+        <div class="nav-label">上一篇</div>
+        
+        <div class="nav-title">NUC5i5RYH Mojave 黑苹果安装教程 </div>
+        
+      </div>
+    </a>
+  </div>
+  
+  
+  <div class="nav-item-next">
+    <a href="/2018/09/25/Siri-Workflow-捷径-利用API实战——构建Travis-CI应用/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">Siri+Workflow(捷径)利用API实战——远程构建Travis CI </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%8E%AF%E5%A2%83"><span class="toc-text">环境</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AE%89%E8%A3%85"><span class="toc-text">安装</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AE%E4%B8%BB%E5%9F%9F%E5%90%8D-amp-%E5%AD%90%E5%9F%9F%E5%90%8D"><span class="toc-text">设置主域名&amp;子域名</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AEDNS%E8%A7%A3%E6%9E%90"><span class="toc-text">设置DNS解析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%9B%E5%85%A5Dokku-Web%E9%85%8D%E7%BD%AE%E9%A1%B5%E9%9D%A2%E8%AE%BE%E7%BD%AE"><span class="toc-text">进入Dokku Web配置页面设置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%83%A8%E7%BD%B2%E5%89%8D%E5%87%86%E5%A4%87"><span class="toc-text">部署前准备</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AF%AD%E8%A8%80%E6%94%AF%E6%8C%81"><span class="toc-text">语言支持</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E6%94%AF%E6%8C%81"><span class="toc-text">数据库支持</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B3%E7%B3%BB%E5%9E%8B%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="toc-text">关系型数据库</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%93%E5%AD%98"><span class="toc-text">缓存</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%98%9F%E5%88%97"><span class="toc-text">队列</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B6%E4%BB%96"><span class="toc-text">其他</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%83%A8%E7%BD%B2%E7%AC%AC%E4%B8%80%E4%B8%AA%E6%B5%8B%E8%AF%95%E5%BA%94%E7%94%A8"><span class="toc-text">部署第一个测试应用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BAAPP"><span class="toc-text">创建APP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8F%92%E4%BB%B6"><span class="toc-text">安装数据库插件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E5%BA%94%E7%94%A8%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="toc-text">创建应用的数据库</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B3%E8%81%94%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%8EAPP"><span class="toc-text">关联数据库与APP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%83%A8%E7%BD%B2App"><span class="toc-text">部署App</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AF%AD"><span class="toc-text">结语</span></a></li></ol></li></ol>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>72</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>26</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>26</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%8E%AF%E5%A2%83"><span class="toc-text">环境</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AE%89%E8%A3%85"><span class="toc-text">安装</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AE%E4%B8%BB%E5%9F%9F%E5%90%8D-amp-%E5%AD%90%E5%9F%9F%E5%90%8D"><span class="toc-text">设置主域名&amp;子域名</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AEDNS%E8%A7%A3%E6%9E%90"><span class="toc-text">设置DNS解析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%9B%E5%85%A5Dokku-Web%E9%85%8D%E7%BD%AE%E9%A1%B5%E9%9D%A2%E8%AE%BE%E7%BD%AE"><span class="toc-text">进入Dokku Web配置页面设置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%83%A8%E7%BD%B2%E5%89%8D%E5%87%86%E5%A4%87"><span class="toc-text">部署前准备</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AF%AD%E8%A8%80%E6%94%AF%E6%8C%81"><span class="toc-text">语言支持</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E6%94%AF%E6%8C%81"><span class="toc-text">数据库支持</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B3%E7%B3%BB%E5%9E%8B%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="toc-text">关系型数据库</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%93%E5%AD%98"><span class="toc-text">缓存</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%98%9F%E5%88%97"><span class="toc-text">队列</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B6%E4%BB%96"><span class="toc-text">其他</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%83%A8%E7%BD%B2%E7%AC%AC%E4%B8%80%E4%B8%AA%E6%B5%8B%E8%AF%95%E5%BA%94%E7%94%A8"><span class="toc-text">部署第一个测试应用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BAAPP"><span class="toc-text">创建APP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8F%92%E4%BB%B6"><span class="toc-text">安装数据库插件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E5%BA%94%E7%94%A8%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="toc-text">创建应用的数据库</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B3%E8%81%94%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%8EAPP"><span class="toc-text">关联数据库与APP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%83%A8%E7%BD%B2App"><span class="toc-text">部署App</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AF%AD"><span class="toc-text">结语</span></a></li></ol></li></ol>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/traefik/" title="traefik"><div class="tags-list-item">traefik</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+    <a href="/tags/RaspberryPi/" title="RaspberryPi"><div class="tags-list-item">RaspberryPi</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%8E%AF%E5%A2%83"><span class="toc-text">环境</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AE%89%E8%A3%85"><span class="toc-text">安装</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AE%E4%B8%BB%E5%9F%9F%E5%90%8D-amp-%E5%AD%90%E5%9F%9F%E5%90%8D"><span class="toc-text">设置主域名&amp;子域名</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AEDNS%E8%A7%A3%E6%9E%90"><span class="toc-text">设置DNS解析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%9B%E5%85%A5Dokku-Web%E9%85%8D%E7%BD%AE%E9%A1%B5%E9%9D%A2%E8%AE%BE%E7%BD%AE"><span class="toc-text">进入Dokku Web配置页面设置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%83%A8%E7%BD%B2%E5%89%8D%E5%87%86%E5%A4%87"><span class="toc-text">部署前准备</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AF%AD%E8%A8%80%E6%94%AF%E6%8C%81"><span class="toc-text">语言支持</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E6%94%AF%E6%8C%81"><span class="toc-text">数据库支持</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B3%E7%B3%BB%E5%9E%8B%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="toc-text">关系型数据库</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%93%E5%AD%98"><span class="toc-text">缓存</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%98%9F%E5%88%97"><span class="toc-text">队列</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B6%E4%BB%96"><span class="toc-text">其他</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%83%A8%E7%BD%B2%E7%AC%AC%E4%B8%80%E4%B8%AA%E6%B5%8B%E8%AF%95%E5%BA%94%E7%94%A8"><span class="toc-text">部署第一个测试应用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BAAPP"><span class="toc-text">创建APP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8F%92%E4%BB%B6"><span class="toc-text">安装数据库插件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E5%BA%94%E7%94%A8%E7%9A%84%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="toc-text">创建应用的数据库</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B3%E8%81%94%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%8EAPP"><span class="toc-text">关联数据库与APP</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%83%A8%E7%BD%B2App"><span class="toc-text">部署App</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AF%AD"><span class="toc-text">结语</span></a></li></ol></li></ol>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-19</div>
+        <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/"><div class="recent-posts-item-content">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-10</div>
+        <a href="/2021/03/10/Traefik 2 群晖硬核指南/"><div class="recent-posts-item-content">Traefik 2 群晖硬核指南</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-02-26</div>
+        <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Big Sur 黑苹果安装教程</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2024
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>

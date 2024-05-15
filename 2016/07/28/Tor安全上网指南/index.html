@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <meta name="theme-color" content="#fff" id="theme-color">
+  <meta name="description" content="Thinking as a Geek">
+  <link rel="icon" href="/content/images/blog/logo.jpg">
+  <title>Tor安全上网指南</title>
+  
+  
+  <meta property="og:title" content="Tor安全上网指南">
+  
+  
+  <meta property="og:url" content="http://www.yfgeek.com/2016/07/28/Tor%E5%AE%89%E5%85%A8%E4%B8%8A%E7%BD%91%E6%8C%87%E5%8D%97/index.html">
+  
+  
+  <meta property="og:img" content="/content/images/blog/me.jpg">
+  
+  
+  <meta property="og:img" content="&lt;p&gt;本文主要介绍了如何将一个虚拟机系统全局使用TOR技术，笔者所用操作系统为OS X EI Capitan 10.11.5，虚拟机系统为VMware Fusion专业版 8.1.1 (3771013)。&lt;/p&gt;">
+  
+  
+  <meta property="og:type" content="article">
+  <meta property="og:article:published_time" content="2016-07-28">
+  <meta property="og:article:modified_time" content="2016-08-05">
+  <meta property="og:article:author" content="极客凡">
+  
+  
+  <meta property="og:article:tag" content="Hack">
+  
+  
+  
+  
+  <script>
+    // control reverse button
+    var reverseDarkList = {
+      dark: 'light',
+      light: 'dark'
+    };
+    var themeColor = {
+      dark: '#1c1c1e',
+      light: '#fff'
+    }
+    // get the data of css prefers-color-scheme
+    var getCssMediaQuery = function() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    // reverse current darkmode setting function
+    var reverseDarkModeSetting = function() {
+      var setting = localStorage.getItem('user-color-scheme');
+      if(reverseDarkList[setting]) {
+        setting = reverseDarkList[setting];
+      } else if(setting === null) {
+        setting = reverseDarkList[getCssMediaQuery()];
+      } else {
+        return;
+      }
+      localStorage.setItem('user-color-scheme', setting);
+      return setting;
+    };
+    // apply current darkmode setting
+    var setDarkmode = function(mode) {
+      var setting = mode || localStorage.getItem('user-color-scheme');
+      if(setting === getCssMediaQuery()) {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else if(reverseDarkList[setting]) {
+        document.documentElement.setAttribute('data-user-color-scheme', setting);
+        document.getElementById('theme-color').content = themeColor[setting];
+      } else {
+        document.documentElement.removeAttribute('data-user-color-scheme');
+        localStorage.removeItem('user-color-scheme');
+        document.getElementById('theme-color').content = themeColor[getCssMediaQuery()];
+      }
+    };
+    setDarkmode();
+  </script>
+  <script>
+    function loadScript(url, cb) {
+      var script = document.createElement('script');
+      script.src = url;
+      if (cb) script.onload = cb;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  </script>
+  
+  <link rel="preload" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css" as="style" >
+  <link rel="preload" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css" as="style" >
+  
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.js" as="script">
+  <link rel="preload" href="/js/lib/lightbox/baguetteBox.min.css" as="style" >
+  
+  
+  <link rel="preload" href="/js/lib/lozad.min.js" as="script">
+  
+  
+  
+  
+  
+  
+  <link rel="prefetch" href="//unpkg.com/valine/dist/Valine.min.js" as="script">
+  
+  
+  
+  
+<link rel="stylesheet" href="/css/main.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1946621_i1kgafibvw.css">
+
+  
+  
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1952792_89b4ac4k4up.css">
+
+  
+  
+<link rel="stylesheet" href="/js/lib/lightbox/baguetteBox.min.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+
+<body>
+  <div class="wrapper">
+    
+    <nav class="navbar">
+  <div class="navbar-logo">
+    <span class="navbar-logo-main">
+      
+      <img class="navbar-logo-img" src="/content/images/blog/logo.jpg" alt="logo">
+      
+      <span class="navbar-logo-dsc">极客凡的自留地</span>
+    </span>
+  </div>
+  <div class="navbar-menu">
+    
+    <a href="/" class="navbar-menu-item">
+    
+    首页
+    
+    </a>
+    
+    <a href="/archives" class="navbar-menu-item">
+    
+    归档
+    
+    </a>
+    
+    <a href="/tags" class="navbar-menu-item">
+    
+    标签
+    
+    </a>
+    
+    <a href="/fav" class="navbar-menu-item">
+    
+    收藏
+    
+    </a>
+    
+    <a href="/about" class="navbar-menu-item">
+    
+    关于
+    
+    </a>
+    
+    <a href="/links" class="navbar-menu-item">
+    
+    友链
+    
+    </a>
+    
+    <a class="navbar-menu-item darknavbar" id="dark"><i class="iconfont icon-weather"></i></a>
+    <a class="navbar-menu-item searchnavbar" id="search"><i class="iconfont icon-search" style="font-size: 1.2rem; font-weight: 400;"></i></a>
+  </div>
+</nav>
+    
+    <div id="local-search" style="display: none;">
+      <input class="navbar-menu-item" id="search-input" placeholder="请输入搜索内容...">
+      <div id="search-content"></div>
+    </div>
+    
+    <div class="section-wrap">
+      <div class="container">
+        <div class="columns">
+          <main class="main-column">
+<article class="card card-content">
+  <header>
+    <h1 class="post-title">
+      Tor安全上网指南
+    </h1>
+  </header>
+  <div class="post-meta post-show-meta">
+    <time datetime="2016-07-28T08:01:47.000Z">
+      <i class="iconfont icon-calendar" style="margin-right: 2px;"></i>
+      <span>2016-07-28</span>
+    </time>
+    
+    
+    <span class="dot"></span>
+    <span>1.5k 字</span>
+    
+  </div>
+  
+  <div class="post-meta post-show-meta" style="margin-top: -10px;">
+    <div style="display: flex; align-items: center;">
+      <i class="iconfont icon-biaoqian" style="margin-right: 2px; font-size: 1.15rem;"></i>
+      
+      
+        <a href="/tags/Hack/" class="post-meta-link">Hack</a>
+      
+    </div>
+  </div>
+  
+  </header>
+  <div id="section" class="post-content">
+    <p>本文主要介绍了如何将一个虚拟机系统全局使用TOR技术，笔者所用操作系统为OS X EI Capitan 10.11.5，虚拟机系统为VMware Fusion专业版 8.1.1 (3771013)。</p>
+<span id="more"></span> 
+<p>声明！</p>
+<p>==本文原创，技术无罪，笔者即将身处海外，本文撰写目的<strong>仅为防止美国棱镜计划侵犯本人隐私安全，无其它任何用途</strong>。==</p>
+<p>==使用TOR技术请在遵守当地法律的前提下使用！本软件在中国大陆地区已被封锁，按照相关法律法规，禁止使用本软件。由于相关政策法律原因，<strong>不允许任何形式私自转载</strong>，本文只进行对TOR相关<strong>技术探讨</strong>，不涉及任何违法违规行为，请勿用于非法用途（如渗透服务器、非法扫描网段、不受监控的网络言论、不受监控的非法互联网通讯等），如出现上述等违法行为，请自负法律责任！==</p>
+<p><strong>准备条件</strong></p>
+<ul>
+<li><p>1.一个隧道(ssh,shadowsocks,socket5,http,vpn都可以)可以连接到真正的互联网，如果身处海外请无视此条。</p>
+</li>
+<li><p>2.最新版Vidalia <a target="_blank" rel="noopener" href="https://dist.torproject.org/vidalia-bundles/">下载地址</a>（需完整互联网）</p>
+</li>
+<li><p>3.Vmware Fusion/Vmware workstation/Oracle VirtualBox</p>
+</li>
+<li><p>4.一个完整版的虚拟机操作系统</p>
+</li>
+</ul>
+<p><strong>笔者环境</strong></p>
+<p>操作系统：OS X EI Capitan 10.11.5</p>
+<p>虚拟机软件：VMware Fusion专业版 8.1.1 (3771013)</p>
+<p>虚拟机操作系统：Windows xp sp2 或 Kali linux</p>
+<p>隧道软件：lantern 或 shadowsockets</p>
+<h3 id="Vidalia部分"><a href="#Vidalia部分" class="headerlink" title="Vidalia部分"></a>Vidalia部分</h3><p><em>如果你的网络未进行封锁，请忽略前2步，请跑步进入第3步。</em><br><img src="/content/images/2016/07/1-1.png" width = "500px"/ srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/2016/07/1-1.png" class="lozad post-image"><br><strong>1.建立您的隧道网络</strong></p>
+<p>笔者以shadowsocks为例，开启shadowsocks配置好信息后，无需做任何操作。shadowsocks的默认对外端口为1080。</p>
+<p><strong>2.在Vidalia中设置代理连接</strong></p>
+<p>打开Vidalia-设置-网络：我使用代理服务器连接网络</p>
+<p>地址：127.0.0.1 端口：1080（用户定义）</p>
+<p>类型：SOCKS 5<br><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/2016/07/1-2.png" class="lozad post-image"src="/content/images/2016/07/1-2.png"></p>
+<p><strong>3.继续设置，转发出外网端口</strong></p>
+<p>Vidalia-设置-高级-编辑当前torrc：<br><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/2016/07/1-3.png" class="lozad post-image"src="/content/images/2016/07/1-3.png"><br>确认socksport为9050，也可以定义为其他端口。<br>同时添加<code>SocksListenAddress 0.0.0.0:9050</code>到底部<br>保存</p>
+<p>笔者配置文件如下，仅供参考，不可复制：</p>
+<pre class="highlight"><span class="line"><span class="comment"># This file was generated by Tor; if you edit it, comments will not be preserved</span></span><br><span class="line"><span class="comment"># The old torrc file was renamed to torrc.orig.1 or similar, and Tor will ignore it</span></span><br><span class="line"></span><br><span class="line">ControlPort 9051</span><br><span class="line">DataDirectory /Users/ivan/.tor</span><br><span class="line">DirReqStatistics 0</span><br><span class="line">HashedControlPassword 16:此处隐藏</span><br><span class="line">Socks5Proxy 127.0.0.1:1080</span><br><span class="line">Log notice stdout</span><br><span class="line">SocksListenAddress 0.0.0.0:9050</span><br><span class="line">SocksPort 9050</span><br></pre>
+
+
+<p></pre><br><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/2016/07/1-4.png" class="lozad post-image"src="/content/images/2016/07/1-4.png"><br><strong>4.Vidalia启动TOR</strong></p>
+<p>稍等片刻，需要建立Tor回路，五分钟后，便会提示你连接成功。<br><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/2016/07/1-5.png" class="lozad post-image"src="/content/images/2016/07/1-5.png"><br>随后可以通过使用Chrome的网络代理插件测试，通过ip测试可判断是否成功。如果ip地址每几分钟自动更新一次，且都是不同国家的，则说明TOR回路建立成功。<br><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/2016/07/2-2.png" class="lozad post-image"src="/content/images/2016/07/2-2.png"><br><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/2016/07/2-1.png" class="lozad post-image"src="/content/images/2016/07/2-1.png"></p>
+<h3 id="Vmware部分"><a href="#Vmware部分" class="headerlink" title="Vmware部分"></a>Vmware部分</h3><p><strong>1.设置Vmware，添加虚拟网卡</strong></p>
+<p>进入Vmware的偏好设置-网络，先点小锁，把功能解锁。</p>
+<p>然后点+，新建一个网络，<strong>警告：请勿勾选NAT</strong>。</p>
+<p><strong>勾选 将MAC主机连入该网络</strong></p>
+<p>同时设置 <strong>通过DHCP在该网络提供网络地址</strong>：</p>
+<pre>
+子网ip：172.16.225.0
+
+子网掩码：255.255.255.0
+</pre>
+
+<p><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/2016/07/1.jpg" class="lozad post-image"src="/content/images/2016/07/1.jpg"><br><strong>2.在虚拟机系统的配置中，将网络适配器的上网方式改为vmnet2</strong></p>
+<p>虚拟机-设置-网络适配器-vmnet2，请再次确保无其他上网方式以保证绝对安全。<br><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/2016/07/2.jpg" class="lozad post-image"src="/content/images/2016/07/2.jpg"></p>
+<h3 id="虚拟机部分-Win"><a href="#虚拟机部分-Win" class="headerlink" title="虚拟机部分(Win)"></a><strong>虚拟机部分(Win)</strong></h3><p><strong>1.进入操作系统</strong></p>
+<p>建议重新安装操作系统，以保证系统纯净性。<br><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/2016/07/4-1.jpg" class="lozad post-image"src="/content/images/2016/07/4-1.jpg"><br><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/2016/07/5-pic_hd.jpg" class="lozad post-image"src="/content/images/2016/07/5-pic_hd.jpg"></p>
+<p><strong>2.寻找宿主机ip</strong></p>
+<p>经过笔者的简单测试，宿主机ip为172.16.225.1<br><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/2016/07/6-pic_hd.jpg" class="lozad post-image"src="/content/images/2016/07/6-pic_hd.jpg"><br>如果实在找不到，可用啊D工具箱或nmap等工具进行查找。</p>
+<p><strong>3.确认系统当前状态下不能上网，甚至局域网也不可通，检查网络连接中的网络适配器，禁用一切，仅保留本地连接</strong></p>
+<p><strong>4.安装Proxifier</strong></p>
+<p>Proxifier是一个全局代理软件，将socket端口流量转发到系统全局，十分好用稳定，值得推荐。</p>
+<p><strong>5.配置Proxifer</strong></p>
+<p>打开Proxifier-Profile-Proxy Servers，点击Add…<br><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/2016/07/7-pic_hd.jpg" class="lozad post-image"src="/content/images/2016/07/7-pic_hd.jpg"></p>
+<p>随后保存并设置而为默认</p>
+<p><strong>6.测试网络</strong></p>
+<p>打开浏览器，对当前ip进行查询，ip会随着时间随机切换，不同国家。<br><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/2016/07/9-pic_hd.jpg" class="lozad post-image"src="/content/images/2016/07/9-pic_hd.jpg"><br><img  srcset="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20300%20300'%3E%3C/svg%3E" data-src="/content/images/2016/07/8-pic_hd.jpg" class="lozad post-image"src="/content/images/2016/07/8-pic_hd.jpg"></p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a><strong>总结</strong></h3><p>为了保证用户隐私的绝对安全，建议做到以下几点：</p>
+<ul>
+<li>在虚拟机系统下不要留下任何痕迹：</li>
+<li>虚拟机操作系统系统语言设置为英语，地区为美国。</li>
+<li>虚拟机下的浏览器建议使用friefox或chrome，安装https everywhere、noscript等插件，在浏览器相关设置中设置禁止追踪等查看隐私行为。</li>
+<li>关机前清除系统隐私记录，养成良好习惯。</li>
+<li>能设置不保留记录的软件均设置如此。</li>
+<li>不要安装使用任何国产软件，尤其是任何国产音乐播放器、任何国产视频播放器，严禁使用360等任何管家、QQ、搜狗输入法、各种国产云盘，否则一定会前功尽弃。</li>
+<li>不要使用任何私人账户登录任何网站、任何软件，如有必要，建议现场注册新号码，不要自作聪明使用尘封已久的小号。</li>
+<li>将虚拟机操作系统放在Truecrypt等加密软件的虚拟磁盘里，如果是Windows，建议开启Bitlocker，如果是MacOS，建议开启FileVault，同时将系统密码设置为与自己隐私无关的高强度密码。</li>
+<li>设置宿主机的BIOS密码，防止设备被盗隐私丢失，同时建议写好一键远程删除虚拟磁盘的sh脚本，以防重要文件泄露。</li>
+<li>进入TOR网络后，您将面临更大的网络威胁，因为TOR的网域中深藏全球各地的极客、大黑客、恐怖分子等危险人物，请更加注意保护虚拟机子系统安全以及文件安全。</li>
+</ul>
+<p><strong>特别鸣谢</strong></p>
+<p>感谢几年前@safe121提供的无私技术帮助</p>
+
+  </div>
+  <div>
+  
+  </div>
+</article>
+<div class="nav">
+  
+  <div class="nav-item-prev">
+    <a href="/2016/07/29/Emacs-命令大全/" class="nav-link">
+      <i class="iconfont icon-left nav-prev-icon"></i>
+      <div>
+        <div class="nav-label">上一篇</div>
+        
+        <div class="nav-title">Emacs 命令大全 </div>
+        
+      </div>
+    </a>
+  </div>
+  
+  
+  <div class="nav-item-next">
+    <a href="/2016/07/28/Vim-命令大全/" class="nav-link">
+      <div>
+        <div class="nav-label">下一篇</div>
+        
+        <div class="nav-title">Vim 命令大全 </div>
+        
+      </div>
+      <i class="iconfont icon-right nav-next-icon"></i>
+    </a>
+  </div>
+  
+</div>
+
+<div class="card card-content comment-card" style="margin-top: 16px;">
+  <div class="comment-card-title">评论</div>
+  
+  <div id="vcomments"></div>
+  
+  <script>
+    loadScript("//unpkg.com/valine/dist/Valine.min.js");
+    var oldLoadVa = window.onload;
+    window.onload = function () {
+      oldLoadVa && oldLoadVa();
+      new Valine({
+        el: '#vcomments',
+        appId: 'eh4yL91u4byOPzcICUF0wvR7-gzGzoHsz',
+        appKey: '1cyxs8hvuDNK36rsG6PaN24S',
+        placeholder: '',
+        path: window.location.pathname,
+        avatar: 'mp',
+        meta: ["nick"],
+        pageSize: '10',
+        lang: '',
+        visitor: 'false',
+        highlight: true,
+        recordIP: true,
+        
+        
+        
+        enableQQ: 'false',
+        requiredFields: [],
+      });
+    };
+  </script>
+
+</div>
+
+<div class="card card-content toc-card" id="mobiletoc">
+  <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Vidalia%E9%83%A8%E5%88%86"><span class="toc-text">Vidalia部分</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Vmware%E9%83%A8%E5%88%86"><span class="toc-text">Vmware部分</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA%E9%83%A8%E5%88%86-Win"><span class="toc-text">虚拟机部分(Win)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-text">总结</span></a></li></ol>
+</div></main>
+          <aside class="left-column">
+            
+            <div class="card card-author">
+              
+<img src="/content/images/blog/me.jpg" class="author-img">
+
+<p class="author-name">极客凡</p>
+<p class="author-description">喜欢一切有趣的事物</p>
+<div class="author-message">
+  <a class="author-posts-count" href="/archives">
+    <span>72</span>
+    <span>文章</span>
+  </a>
+  <a class="author-categories-count" href="/categories">
+    <span>26</span>
+    <span>分类</span>
+  </a>
+  <a class="author-tags-count" href="/tags">
+    <span>26</span>
+    <span>标签</span>
+  </a>
+</div>
+
+            </div>
+            
+            <div class="sticky-tablet">
+  
+  
+  <article class="display-when-two-columns spacer">
+    <div class="card card-content toc-card">
+      <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Vidalia%E9%83%A8%E5%88%86"><span class="toc-text">Vidalia部分</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Vmware%E9%83%A8%E5%88%86"><span class="toc-text">Vmware部分</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA%E9%83%A8%E5%88%86-Win"><span class="toc-text">虚拟机部分(Win)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-text">总结</span></a></li></ol>
+    </div>
+  </article>
+  
+  
+  <article class="card card-content tags-widget">
+    <div class="tags-card">
+  <div class="tags-header"><i class="iconfont icon-biaoqian" style="padding-right: 2px;"></i>热门标签</div>
+  <div class="tags-list">
+    
+    <a href="/tags/Hack/" title="Hack"><div class="tags-list-item">Hack</div></a>
+    
+    <a href="/tags/Raspberry/" title="Raspberry"><div class="tags-list-item">Raspberry</div></a>
+    
+    <a href="/tags/Web/" title="Web"><div class="tags-list-item">Web</div></a>
+    
+    <a href="/tags/Mac/" title="Mac"><div class="tags-list-item">Mac</div></a>
+    
+    <a href="/tags/Linux/" title="Linux"><div class="tags-list-item">Linux</div></a>
+    
+    <a href="/tags/数据/" title="数据"><div class="tags-list-item">数据</div></a>
+    
+    <a href="/tags/笑话/" title="笑话"><div class="tags-list-item">笑话</div></a>
+    
+    <a href="/tags/React-Native/" title="React-Native"><div class="tags-list-item">React-Native</div></a>
+    
+    <a href="/tags/traefik/" title="traefik"><div class="tags-list-item">traefik</div></a>
+    
+    <a href="/tags/Github/" title="Github"><div class="tags-list-item">Github</div></a>
+    
+    <a href="/tags/Brainfuck/" title="Brainfuck"><div class="tags-list-item">Brainfuck</div></a>
+    
+    <a href="/tags/Docker/" title="Docker"><div class="tags-list-item">Docker</div></a>
+    
+    <a href="/tags/Defi/" title="Defi"><div class="tags-list-item">Defi</div></a>
+    
+    <a href="/tags/其他/" title="其他"><div class="tags-list-item">其他</div></a>
+    
+    <a href="/tags/杂谈/" title="杂谈"><div class="tags-list-item">杂谈</div></a>
+    
+    <a href="/tags/RaspberryPi/" title="RaspberryPi"><div class="tags-list-item">RaspberryPi</div></a>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+          <aside class="right-column">
+            <div class="sticky-widescreen">
+  
+  
+  <article class="card card-content toc-card">
+    <div class="toc-header"><i class="iconfont icon-menu" style="padding-right: 2px;"></i>目录</div>
+<ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Vidalia%E9%83%A8%E5%88%86"><span class="toc-text">Vidalia部分</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Vmware%E9%83%A8%E5%88%86"><span class="toc-text">Vmware部分</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA%E9%83%A8%E5%88%86-Win"><span class="toc-text">虚拟机部分(Win)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-text">总结</span></a></li></ol>
+  </article>
+  
+  
+  <article class="card card-content">
+    <div class="recent-posts-card">
+  <div class="recent-posts-header"><i class="iconfont icon-wenzhang_huaban" style="padding-right: 2px;"></i>最近文章</div>
+  <div class="recent-posts-list">
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-19</div>
+        <a href="/2021/03/19/Traefik 2 监控系统 之Grafana、Prometheus、Loki完美结合/"><div class="recent-posts-item-content">Traefik 2 监控系统之Grafana Prometheus Promtail Loki完美结合</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-03-10</div>
+        <a href="/2021/03/10/Traefik 2 群晖硬核指南/"><div class="recent-posts-item-content">Traefik 2 群晖硬核指南</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-02-26</div>
+        <a href="/2021/02/26/NUC5i5RYH-BigSur-黑苹果安装手记/"><div class="recent-posts-item-content">NUC5i5RYH Big Sur 黑苹果安装教程</div></a>
+      </div>
+    
+      <div class="recent-posts-item">
+        <div class="recent-posts-item-title">2021-01-24</div>
+        <a href="/2021/01/24/走进流式付款的世界 Sablier 源码解读/"><div class="recent-posts-item-content">走进流式付款的世界 Sablier 源码解读</div></a>
+      </div>
+    
+  </div>
+</div>
+  </article>
+  
+  
+</div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <footer class="footer">
+  <div class="footer-container">
+    <div>
+      <div class="footer-dsc">
+        <span>Copyright ©
+          
+          2021 -
+          
+          2024
+        </span>
+        &nbsp;
+        <a href="/" class="footer-link">极客凡的自留地 </a>
+      </div>
+    </div>
+
+    
+    <div class="footer-dsc">
+      
+      Powered by
+      <a href="https://hexo.io/" class="footer-link" target="_blank" rel="nofollow noopener noreferrer">&nbsp;Hexo </a>
+      
+      
+      <span>&nbsp;|&nbsp;</span>
+      
+      
+      Theme -
+      <a href="https://github.com/theme-kaze" class="footer-link" target="_blank"
+        rel="nofollow noopener noreferrer">&nbsp;Kaze</a>
+      
+    </div>
+    
+    
+    
+    
+      <div class="footer-dsc">
+        
+        本站总访问量<span id="busuanzi_value_site_pv"></span>次
+        
+        
+        <span>&nbsp;|&nbsp;</span>
+        
+        
+        本站总访客数<span id="busuanzi_value_site_uv"></span>次
+        
+      </div>
+      
+    
+</footer>
+  <a role="button" id="scrollbutton" class="basebutton"  aria-label="回到顶部">
+  <i class="iconfont icon-arrowleft button-icon"></i>
+</a>
+<a role="button" id="menubutton" class="basebutton">
+  <i class="iconfont icon-menu button-icon"></i>
+</a>
+<a role="button" id="popbutton" class="basebutton" aria-label="控制中心">
+  <i class="iconfont icon-expand button-icon"></i>
+</a>
+<a role="button" id="darkbutton" class="basebutton darkwidget" aria-label="夜色模式">
+  <i class="iconfont icon-weather button-icon"></i>
+</a>
+<a role="button" id="searchbutton" class="basebutton searchwidget" aria-label="搜索">
+  <i class="iconfont icon-search button-icon"></i>
+</a>
+
+  
+  
+  
+  <script>
+  var addImgLayout = function () {
+    var img = document.querySelectorAll('.post-content img');
+    var i;
+    for (i = 0; i < img.length; i++) {
+      var wrapper = document.createElement('a');
+      wrapper.setAttribute('href', img[i].getAttribute('data-src'));
+      wrapper.setAttribute('aria-label', 'illustration');
+      wrapper.style.cssText = 'width: 100%; display: flex; justify-content: center;';
+      if (img[i].alt) wrapper.dataset.caption = img[i].alt;
+      wrapper.dataset.nolink = true;
+      img[i].before(wrapper);
+      wrapper.append(img[i]);
+      var divWrap = document.createElement('div');
+      divWrap.classList.add('gallery');
+      wrapper.before(divWrap);
+      divWrap.append(wrapper);
+    }
+    baguetteBox.run('.gallery');
+  }
+</script>
+<script>loadScript("/js/lib/lightbox/baguetteBox.min.js", addImgLayout)</script>
+  
+  
+  
+<script src="/js/main.js"></script>
+
+  
+  <script>loadScript("/js/lib/busuanzi.min.js")</script>
+  
+  
+  <script>
+    var addLazyload = function () {
+      var observer = lozad('.lozad', {
+        load: function (el) {
+          el.srcset = el.getAttribute('data-src');
+        },
+        loaded: function (el) {
+          el.classList.add('loaded');
+        }
+      });
+      observer.observe();
+    }
+  </script>
+  <script>loadScript("/js/lib/lozad.min.js", addLazyload)</script>
+  
+  
+</body>
+
+</html>
